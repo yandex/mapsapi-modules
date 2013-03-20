@@ -9,7 +9,7 @@ void modules.define(
     [String declarationName],
     Array<String> dependencies,
     Function(
-        Function provide,
+        Function(Object objectToProvide) provide,
         [Object resolvedDependency, ...],
         [Object previousDeclaration] // Зависит от реализации
     ) declarationFunction
