@@ -6,7 +6,7 @@
 Объявление модуля:
 ```javascript
 void modules.define(
-    [String declarationName],
+    String declarationName,
     [Array<String> dependencies],
     Function(
         Function(Object objectToProvide) provide,
