@@ -20,7 +20,7 @@ void modules.define(
 void modules.require(
     Array<String> modules,
     Function(
-        [Object resolvedDependency, ...],
+        [Object resolvedDependency, ...]
     ) callbackFunction
 )
 ```
