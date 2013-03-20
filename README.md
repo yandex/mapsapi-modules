@@ -7,7 +7,7 @@
 ```javascript
 void modules.define(
     [String declarationName],
-    Array<String> dependencies,
+    [Array<String> dependencies],
     Function(
         Function(Object objectToProvide) provide,
         [Object resolvedDependency, ...],
