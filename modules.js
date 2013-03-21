@@ -5,6 +5,15 @@ var DECL_STATES = {
         IN_RESOLVING : 1,
         RESOLVED     : 2
     },
+
+    undef,
+    modulesStorage = {},
+    declsToCalc = [],
+    pendingRequires = [],
+    throwModuleNotFound = function(name) {
+        throw Error('can\'t find module "' + name + '"');
+    },
+
     /**
      * Defines module
      * @param {String} name
@@ -147,14 +156,6 @@ var DECL_STATES = {
         }
 
         delete decl.dependents;
-    },
-
-    undef,
-    modulesStorage = {},
-    declsToCalc = [],
-    pendingRequires = [],
-    throwModuleNotFound = function(name) {
-        throw Error('can\'t find module "' + name + '"');
     },
 
     nextTick = typeof process === 'object'? // nodejs
