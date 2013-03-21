@@ -6,12 +6,27 @@ var DECL_STATES = {
         RESOLVED     : 2
     },
 
+    curOptions = {
+        trackCircularDependencies : true
+    },
+
     undef,
     modulesStorage = {},
     declsToCalc = [],
     pendingRequires = [],
     throwModuleNotFound = function(name) {
-        throw Error('can\'t find module "' + name + '"');
+        throw Error('Can\'t find module "' + name + '"');
+    },
+
+    throwCircularDependenceDetected = function(decl, path) {
+        var strPath = [],
+            i = 0, pathDecl;
+        while(pathDecl = path[i++]) {
+            strPath.push(pathDecl.name);
+        }
+        strPath.push(decl.name);
+
+        throw Error('Circular dependence detected "' + strPath.join(' -> ') + '"');
     },
 
     /**
@@ -34,6 +49,7 @@ var DECL_STATES = {
             });
 
         declsToCalc.push(module.decl = {
+            name          : name,
             fn            : declFn,
             state         : DECL_STATES.NOT_RESOLVED,
             deps          : deps,
@@ -61,9 +77,12 @@ var DECL_STATES = {
             dependOnDecls.push(modulesStorage[dep].decl);
         }
 
-        requireDecls(dependOnDecls, function(exports) {
-            cb.apply(null, exports);
-        });
+        requireDecls(
+            dependOnDecls,
+            function(exports) {
+                cb.apply(null, exports);
+            },
+            []);
     },
 
     calcDeclDeps = function() {
@@ -95,7 +114,7 @@ var DECL_STATES = {
         }
     },
 
-    requireDecls = function(decls, cb) {
+    requireDecls = function(decls, cb, path) {
         var unresolvedDeclCnt = decls.length,
             checkUnresolved = true;
 
@@ -110,10 +129,14 @@ var DECL_STATES = {
                     --unresolvedDeclCnt;
                 }
                 else {
+                    if(curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
+                        throwCircularDependenceDetected(decl, path);
+                    }
+
                     checkUnresolved = false;
                     decl.dependents.push(onDeclResolved);
                     if(decl.state === DECL_STATES.NOT_RESOLVED) {
-                        startDeclResolving(decl);
+                        startDeclResolving(decl, path);
                     }
                 }
             }
@@ -133,7 +156,8 @@ var DECL_STATES = {
         cb(exports);
     },
 
-    startDeclResolving = function(decl) {
+    startDeclResolving = function(decl, path) {
+        curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
         decl.state = DECL_STATES.IN_RESOLVING;
         requireDecls(
             decl.dependOnDecls,
@@ -143,7 +167,8 @@ var DECL_STATES = {
                     [function(exports) {
                         provideDecl(decl, exports);
                     }].concat(depDeclsExports));
-            });
+            },
+            path);
     },
 
     provideDecl = function(decl, exports) {
@@ -156,6 +181,24 @@ var DECL_STATES = {
         }
 
         delete decl.dependents;
+    },
+
+    isDependenceCircular = function(decl, path) {
+        var i = 0, pathDecl;
+        while(pathDecl = path[i++]) {
+            if(decl === pathDecl) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    options = function(inputOptions) {
+        for(var name in inputOptions) {
+            if(inputOptions.hasOwnProperty(name)) {
+                curOptions[name] = inputOptions[name];
+            }
+        }
     },
 
     nextTick = typeof process === 'object'? // nodejs
@@ -210,7 +253,8 @@ var DECL_STATES = {
 
     api = {
         define  : define,
-        require : require
+        require : require,
+        options : options
     };
 
 if(typeof exports === 'object') {
