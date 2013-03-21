@@ -7,7 +7,7 @@
 
 ####Дополнительные требования####
   1. Возможность декларировать под одним именем более чем одну сущность
-  2. С учетом наличия пунтка 1 зависимости разрешаются в пределах одного "поколения" деклараций
+  2. С учетом наличия пункта 1 зависимости разрешаются в пределах одного "поколения" деклараций
 
 ####Почему не CommonJS?####
 Смотри пункты 1 и 2 основных требований
@@ -48,16 +48,14 @@ modules.define(
     function(provide, b, c, prev) {
         var a = {};
         provide(a);
-    }
-);
+    });
 
 modules.define(
     'B',
     function(provide) {
         var b = {};
         provide(b);
-    }
-);
+    });
 
 modules.define(
     'C',
@@ -65,10 +63,11 @@ modules.define(
     function(provide, b) {
         var c = {};
         provide(c);
-    }
-);
+    });
 
-modules.require('A', function(a) {
+modules.require(
+  'A',
+  function(a) {
     // module 'A' now resolved to a
-});
+  });
 ```
