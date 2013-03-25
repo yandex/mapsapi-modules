@@ -14,20 +14,6 @@ var DECL_STATES = {
     modulesStorage = {},
     declsToCalc = [],
     pendingRequires = [],
-    throwModuleNotFound = function(name) {
-        throw Error('Can\'t find module "' + name + '"');
-    },
-
-    throwCircularDependenceDetected = function(decl, path) {
-        var strPath = [],
-            i = 0, pathDecl;
-        while(pathDecl = path[i++]) {
-            strPath.push(pathDecl.name);
-        }
-        strPath.push(decl.name);
-
-        throw Error('Circular dependence detected "' + strPath.join(' -> ') + '"');
-    },
 
     /**
      * Defines module
@@ -94,11 +80,11 @@ var DECL_STATES = {
                 modulesStorage[dep] || throwModuleNotFound(dep);
                 dependOnDecls.push(modulesStorage[dep].decl);
             }
-            delete decl.deps;
+            decl.deps = undef;
 
             if(decl.prevDecl) {
                 dependOnDecls.push(decl.prevDecl);
-                delete decl.prevDecl;
+                decl.prevDecl = undef;
             }
         }
 
@@ -180,7 +166,7 @@ var DECL_STATES = {
             dependent(decl.exports);
         }
 
-        delete decl.dependents;
+        decl.dependents = undef;
     },
 
     isDependenceCircular = function(decl, path) {
@@ -199,6 +185,21 @@ var DECL_STATES = {
                 curOptions[name] = inputOptions[name];
             }
         }
+    },
+
+    throwModuleNotFound = function(name) {
+        throw Error('Can\'t find module "' + name + '"');
+    },
+
+    throwCircularDependenceDetected = function(decl, path) {
+        var strPath = [],
+            i = 0, pathDecl;
+        while(pathDecl = path[i++]) {
+            strPath.push(pathDecl.name);
+        }
+        strPath.push(decl.name);
+
+        throw Error('Circular dependence detected "' + strPath.join(' -> ') + '"');
     },
 
     nextTick = (function() {
