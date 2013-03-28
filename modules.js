@@ -53,22 +53,16 @@ var DECL_STATES = {
     require = function(modules, cb) {
         if(!waitForNextTick) {
             waitForNextTick = true;
-            pendingRequires.push({ modules : modules, cb : cb });
-            nextTick(calcDeclDeps);
+            nextTick(onNextTick);
         }
 
-        var i = 0, dep, dependOnDecls = [];
-        while(dep = modules[i++]) {
-            modulesStorage[dep] || throwModuleNotFound(dep);
-            dependOnDecls.push(modulesStorage[dep].decl);
-        }
+        pendingRequires.push({ modules : modules, cb : cb });
+    },
 
-        requireDecls(
-            dependOnDecls,
-            function(exports) {
-                cb.apply(null, exports);
-            },
-            []);
+    onNextTick = function() {
+        waitForNextTick = false;
+        calcDeclDeps();
+        applyRequires();
     },
 
     calcDeclDeps = function() {
@@ -89,16 +83,29 @@ var DECL_STATES = {
         }
 
         declsToCalc = [];
+    },
 
-        if(pendingRequires.length) {
-            var pendingRequire;
-            i = 0;
-            while(pendingRequire = pendingRequires[i++]) {
-                require(pendingRequire.modules, pendingRequire.cb);
+    applyRequires = function() {
+        var pendingRequire, i = 0, j, dep, dependOnDecls;
+        while(pendingRequire = pendingRequires[i++]) {
+            j = 0; dependOnDecls = [];
+            while(dep = pendingRequire.modules[j++]) {
+                modulesStorage[dep] || throwModuleNotFound(dep);
+                dependOnDecls.push(modulesStorage[dep].decl);
             }
-            pendingRequires = [];
-            waitForNextTick = false;
+            applyRequire(dependOnDecls, pendingRequire.cb);
         }
+
+        pendingRequires = [];
+    },
+
+    applyRequire = function(dependOnDecls, cb) {
+        requireDecls(
+            dependOnDecls,
+            function(exports) {
+                cb.apply(null, exports);
+            },
+            []);
     },
 
     requireDecls = function(decls, cb, path) {
