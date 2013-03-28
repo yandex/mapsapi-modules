@@ -13,6 +13,7 @@ var DECL_STATES = {
     undef,
     modulesStorage = {},
     declsToCalc = [],
+    waitForNextTick = false,
     pendingRequires = [],
 
     /**
@@ -22,8 +23,6 @@ var DECL_STATES = {
      * @param {Function} declFn
      */
     define = function(name, deps, declFn) {
-        declsToCalc.length || nextTick(calcDeclDeps);
-
         if(!declFn) {
             declFn = deps;
             deps = [];
@@ -52,9 +51,10 @@ var DECL_STATES = {
      * @param {Function} cb
      */
     require = function(modules, cb) {
-        if(declsToCalc.length) {
+        if(!waitForNextTick) {
+            waitForNextTick = true;
             pendingRequires.push({ modules : modules, cb : cb });
-            return;
+            nextTick(calcDeclDeps);
         }
 
         var i = 0, dep, dependOnDecls = [];
@@ -97,6 +97,7 @@ var DECL_STATES = {
                 require(pendingRequire.modules, pendingRequire.cb);
             }
             pendingRequires = [];
+            waitForNextTick = false;
         }
     },
 
@@ -119,10 +120,14 @@ var DECL_STATES = {
                         throwCircularDependenceDetected(decl, path);
                     }
 
-                    checkUnresolved = false;
-                    decl.dependents.push(onDeclResolved);
-                    if(decl.state === DECL_STATES.NOT_RESOLVED) {
-                        startDeclResolving(decl, path);
+                    decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
+
+                    if(decl.state === DECL_STATES.RESOLVED) { // decl was resolved synchronously
+                        --unresolvedDeclCnt;
+                    }
+                    else {
+                        decl.dependents.push(onDeclResolved);
+                        checkUnresolved = false;
                     }
                 }
             }
