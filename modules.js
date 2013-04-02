@@ -244,7 +244,7 @@ var DECL_STATES = {
             }
 
             if(isPostMessageAsync) {
-                var msg = '__promise' + +new Date,
+                var msg = '__modules' + +new Date,
                     onMessage = function(e) {
                         if(e.data === msg) {
                             e.stopPropagation && e.stopPropagation();
