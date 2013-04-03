@@ -71,7 +71,7 @@ var DECL_STATES = {
             j = 0;
             dependOnDecls = decl.dependOnDecls;
             while(dep = decl.deps[j++]) {
-                modulesStorage[dep] || throwModuleNotFound(dep);
+                modulesStorage[dep] || throwModuleNotFound(dep, decl);
                 dependOnDecls.push(modulesStorage[dep].decl);
             }
             decl.deps = undef;
@@ -199,8 +199,11 @@ var DECL_STATES = {
         }
     },
 
-    throwModuleNotFound = function(name) {
-        throw Error('Can\'t find module "' + name + '"');
+    throwModuleNotFound = function(name, decl) {
+        throw Error(
+            decl?
+                'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
+                'Can\'t resolve required module "' + name + '"');
     },
 
     throwCircularDependenceDetected = function(decl, path) {
