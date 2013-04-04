@@ -1,0 +1,18 @@
+{
+    "name" : "ym",
+    "version" : "0.0.1",
+    "description" : "Async modules system",
+    "homepage" : "https://github.com/ymaps/modules",
+    "keywords" : ["javascript", "module", "async"],
+    "author" : "",
+    "contributors" : [{
+        "name"  : "Dmitry Filatov",
+        "email" : "dfilatov@yandex-team.ru"
+    }],
+    "repository":{
+        "type" : "git",
+        "url"  : "https://github.com/ymaps/modules.git"
+    },
+    "main" : "modules",
+    "engines" : { "node" : ">= 0.4.0" }
+}
