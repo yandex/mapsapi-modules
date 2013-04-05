@@ -18,7 +18,7 @@
 ####Синтаксис####
 
 Объявление модуля:
-```javascript
+````javascript
 void modules.define(
     String declarationName,
     [Array<String> dependencies],
@@ -28,20 +28,20 @@ void modules.define(
         [Object previousDeclaration] // Зависит от реализации
     ) declarationFunction
 )
-```
+````
 Подключение модуля:
-```javascript
+````javascript
 void modules.require(
     Array<String> modules,
     Function(
         [Object resolvedDependency, ...]
     ) callbackFunction
 )
-```
+````
 
 ####Пример####
 
-```javascript
+````javascript
 modules.define(
     'A', 
     ['B', 'C'], 
@@ -70,4 +70,4 @@ modules.require(
   function(a) {
     // module 'A' now resolved to a
   });
-```
+````
