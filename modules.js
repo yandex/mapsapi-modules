@@ -19,7 +19,7 @@ var DECL_STATES = {
     /**
      * Defines module
      * @param {String} name
-     * @param {String[]} deps
+     * @param {String[]} [deps]
      * @param {Function} declFn
      */
     define = function(name, deps, declFn) {
