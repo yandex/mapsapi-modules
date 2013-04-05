@@ -66,7 +66,7 @@ modules.define(
     });
 
 modules.require(
-  'A',
+  ['A'],
   function(a) {
     // module 'A' now resolved to a
   });
