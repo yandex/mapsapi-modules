@@ -15,9 +15,10 @@
 ####Почему не AMD?####
 Смотри пункт 2 основных требований
 
-####Спецификация API####
+Спецификация API
+----------------
 
-Объявление модуля:
+####Объявление модуля####
 ````javascript
 void modules.define(
     String declarationName,
@@ -29,7 +30,7 @@ void modules.define(
     ) declarationFunction
 )
 ````
-Подключение модуля:
+####Подключение модуля####
 ````javascript
 void modules.require(
     Array<String> modules,
