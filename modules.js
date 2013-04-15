@@ -103,7 +103,7 @@ var DECL_STATES = {
         requireDecls(
             dependOnDecls,
             function(exports) {
-                cb.apply(null, exports);
+                cb.apply(global, exports);
             },
             []);
     },
@@ -161,7 +161,7 @@ var DECL_STATES = {
             decl.dependOnDecls,
             function(depDeclsExports) {
                 decl.fn.apply(
-                    null,
+                    global,
                     [function(exports) {
                         provideDecl(decl, exports);
                     }].concat(depDeclsExports));
