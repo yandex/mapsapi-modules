@@ -157,12 +157,16 @@ var DECL_STATES = {
     startDeclResolving = function(decl, path) {
         curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
         decl.state = DECL_STATES.IN_RESOLVING;
+        var isProvided = false;
         requireDecls(
             decl.dependOnDecls,
             function(depDeclsExports) {
                 decl.fn.apply(
                     global,
                     [function(exports) {
+                        isProvided?
+                            throwDeclAlreadyProvided(decl) :
+                            isProvided = true;
                         provideDecl(decl, exports);
                         return exports;
                     }].concat(depDeclsExports));
@@ -216,6 +220,10 @@ var DECL_STATES = {
         strPath.push(decl.name);
 
         throw Error('Circular dependence detected "' + strPath.join(' -> ') + '"');
+    },
+
+    throwDeclAlreadyProvided = function(decl) {
+        throw Error('Declaration of module "' + decl.name + '" already provided');
     },
 
     nextTick = (function() {
