@@ -164,6 +164,7 @@ var DECL_STATES = {
                     global,
                     [function(exports) {
                         provideDecl(decl, exports);
+                        return exports;
                     }].concat(depDeclsExports));
             },
             path);
