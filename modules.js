@@ -19,13 +19,16 @@ var DECL_STATES = {
     /**
      * Defines module
      * @param {String} name
-     * @param {String[]} [deps]
+     * @param {String|String[]} [deps]
      * @param {Function} declFn
      */
     define = function(name, deps, declFn) {
         if(!declFn) {
             declFn = deps;
             deps = [];
+        }
+        else if(typeof deps === 'string') {
+            deps = [deps];
         }
 
         var module = modulesStorage[name] || (modulesStorage[name] = {
@@ -47,7 +50,7 @@ var DECL_STATES = {
 
     /**
      * Requires modules
-     * @param {String[]} modules
+     * @param {String|String[]} modules
      * @param {Function} cb
      */
     require = function(modules, cb) {
@@ -56,7 +59,10 @@ var DECL_STATES = {
             nextTick(onNextTick);
         }
 
-        pendingRequires.push({ modules : modules, cb : cb });
+        pendingRequires.push({
+            modules : typeof modules === 'string'? [modules] : modules,
+            cb      : cb
+        });
     },
 
     onNextTick = function() {
