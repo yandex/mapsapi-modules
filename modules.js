@@ -233,15 +233,10 @@ var DECL_STATES = {
     },
 
     nextTick = (function() {
-        if(typeof process === 'object') { // nodejs
-            return process.nextTick;
-        }
-
-        if(global.setImmediate) { // ie10
-            return global.setImmediate;
-        }
-
         var fns = [],
+            enqueueFn = function(fn) {
+                return fns.push(fn) === 1;
+            },
             callFns = function() {
                 var fnsToCall = fns, i = 0, len = fns.length;
                 fns = [];
@@ -249,6 +244,18 @@ var DECL_STATES = {
                     fnsToCall[i++]();
                 }
             };
+
+        if(typeof process === 'object' && process.nextTick) { // nodejs
+            return function(fn) {
+                enqueueFn(fn) && process.nextTick(callFns);
+            };
+        }
+
+        if(global.setImmediate) { // ie10
+            return function(fn) {
+                enqueueFn(fn) && global.setImmediate(callFns);
+            };
+        }
 
         if(global.postMessage) { // modern browsers
             var isPostMessageAsync = true;
@@ -275,7 +282,7 @@ var DECL_STATES = {
                     global.attachEvent('onmessage', onMessage);
 
                 return function(fn) {
-                    fns.push(fn) === 1 && global.postMessage(msg, '*');
+                    enqueueFn(fn) && global.postMessage(msg, '*');
                 };
             }
         }
@@ -293,12 +300,12 @@ var DECL_STATES = {
             };
 
             return function(fn) {
-                fns.push(fn) === 1 && createScript();
+                enqueueFn(fn) && createScript();
             };
         }
 
         return function(fn) { // old browsers
-            setTimeout(fn, 0);
+            enqueueFn(fn) && setTimeout(callFns, 0);
         };
     })(),
 
