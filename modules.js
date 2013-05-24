@@ -30,16 +30,13 @@ var DECL_STATES = {
     /**
      * Defines module
      * @param {String} name
-     * @param {String|String[]} [deps]
+     * @param {String[]} [deps]
      * @param {Function} declFn
      */
     define = function(name, deps, declFn) {
         if(!declFn) {
             declFn = deps;
             deps = [];
-        }
-        else if(typeof deps === 'string') {
-            deps = [deps];
         }
 
         var module = modulesStorage[name] || (modulesStorage[name] = {
@@ -61,7 +58,7 @@ var DECL_STATES = {
 
     /**
      * Requires modules
-     * @param {String|String[]} modules
+     * @param {String[]} modules
      * @param {Function} cb
      */
     require = function(modules, cb) {
@@ -71,7 +68,7 @@ var DECL_STATES = {
         }
 
         pendingRequires.push({
-            modules : typeof modules === 'string'? [modules] : modules,
+            modules : modules,
             cb      : cb
         });
     },
