@@ -88,7 +88,6 @@ var DECL_STATES = {
                 modulesStorage[dep] || throwModuleNotFound(dep, decl);
                 dependOnDecls.push(modulesStorage[dep].decl);
             }
-            decl.deps = undef;
 
             if(decl.prevDecl) {
                 dependOnDecls.push(decl.prevDecl);
@@ -176,7 +175,10 @@ var DECL_STATES = {
             decl.dependOnDecls,
             function(depDeclsExports) {
                 decl.fn.apply(
-                    global,
+                    {
+                        name : decl.name,
+                        deps : decl.deps
+                    },
                     [function(exports) {
                         isProvided?
                             throwDeclAlreadyProvided(decl) :
