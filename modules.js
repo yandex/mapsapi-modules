@@ -176,8 +176,9 @@ var DECL_STATES = {
             function(depDeclsExports) {
                 decl.fn.apply(
                     {
-                        name : decl.name,
-                        deps : decl.deps
+                        name   : decl.name,
+                        deps   : decl.deps
+                        global : global
                     },
                     [function(exports) {
                         isProvided?
