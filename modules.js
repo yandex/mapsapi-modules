@@ -177,7 +177,7 @@ var DECL_STATES = {
                 decl.fn.apply(
                     {
                         name   : decl.name,
-                        deps   : decl.deps
+                        deps   : decl.deps,
                         global : global
                     },
                     [function(exports) {
