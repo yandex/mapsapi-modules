@@ -14,5 +14,11 @@
         "url"  : "https://github.com/ymaps/modules.git"
     },
     "main" : "modules",
-    "engines" : { "node" : ">= 0.4.0" }
+    "engines" : { "node" : ">= 0.4.0" },
+    "devDependencies": {
+        "jshint" : "*"
+    },
+    "scripts" : {
+        "test" : "make lint"
+    }
 }
