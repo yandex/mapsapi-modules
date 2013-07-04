@@ -1,4 +1,4 @@
-Модульная система
+Модульная система [![Build Status](https://travis-ci.org/ymaps/modules.png?branch=master)](https://travis-ci.org/ymaps/modules)
 =================
 
 ####Требования####
