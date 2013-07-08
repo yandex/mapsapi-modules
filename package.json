@@ -16,7 +16,8 @@
     "main" : "modules",
     "engines" : { "node" : ">= 0.4.0" },
     "devDependencies": {
-        "jshint" : "*"
+        "jshint" : "*",
+        "jscs" : "1.0.0"
     },
     "scripts" : {
         "test" : "make lint"

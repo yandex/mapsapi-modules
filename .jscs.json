@@ -1,0 +1,12 @@
+{
+    "requireCurlyBraces": ["if", "else", "for", "while", "do"],
+    "requireSpaceAfterKeywords": ["do", "else"],
+    "disallowSpaceAfterKeywords": ["if", "for", "while", "switch"],
+    "requireMultipleVarDecl": true,
+    "requireSpaceAfterObjectKeys": true,
+    "requireAlignedObjectValues": "skipWithLineBreak",
+    "requireLeftStickedOperators": [","],
+    "disallowKeywords": ["with"],
+    "disallowMultipleLineBreaks": true,
+    "requireKeywordsOnNewLine": ["else"]
+}
