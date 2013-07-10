@@ -85,7 +85,10 @@ var DECL_STATES = {
             j = 0;
             dependOnDecls = decl.dependOnDecls;
             while(dep = decl.deps[j++]) {
-                modulesStorage[dep] || throwModuleNotFound(dep, decl);
+                if(!modulesStorage[dep]) {
+                    throwModuleNotFound(dep, decl);
+                    break;
+                }
                 dependOnDecls.push(modulesStorage[dep].decl);
             }
 
@@ -99,14 +102,19 @@ var DECL_STATES = {
     },
 
     applyRequires = function() {
-        var pendingRequire, i = 0, j, dep, dependOnDecls;
+        var pendingRequire, i = 0, j, dep, dependOnDecls, applyCb;
         while(pendingRequire = pendingRequires[i++]) {
-            j = 0; dependOnDecls = [];
+            j = 0; dependOnDecls = []; applyCb = true;
             while(dep = pendingRequire.modules[j++]) {
-                modulesStorage[dep] || throwModuleNotFound(dep);
+                if(!modulesStorage[dep]) {
+                    throwModuleNotFound(dep);
+                    applyCb = false;
+                    break;
+                }
+
                 dependOnDecls.push(modulesStorage[dep].decl);
             }
-            applyRequire(dependOnDecls, pendingRequire.cb);
+            applyCb && applyRequire(dependOnDecls, pendingRequire.cb);
         }
 
         pendingRequires = [];
@@ -221,11 +229,17 @@ var DECL_STATES = {
         }
     },
 
+    throwException = function(e) {
+        nextTick(function() {
+            throw e;
+        });
+    },
+
     throwModuleNotFound = function(name, decl) {
-        throw Error(
+        throwException(Error(
             decl?
                 'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
-                'Can\'t resolve required module "' + name + '"');
+                'Can\'t resolve required module "' + name + '"'));
     },
 
     throwCircularDependenceDetected = function(decl, path) {
@@ -236,11 +250,11 @@ var DECL_STATES = {
         }
         strPath.push(decl.name);
 
-        throw Error('Circular dependence detected "' + strPath.join(' -> ') + '"');
+        throwException(Error('Circular dependence detected "' + strPath.join(' -> ') + '"'));
     },
 
     throwDeclAlreadyProvided = function(decl) {
-        throw Error('Declaration of module "' + decl.name + '" already provided');
+        throwException(Error('Declaration of module "' + decl.name + '" already provided'));
     },
 
     nextTick = (function() {
