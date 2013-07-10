@@ -73,6 +73,15 @@ var DECL_STATES = {
         });
     },
 
+    /**
+     * Returns whether the module is defined
+     * @param {String} name
+     * @returns {Boolean}
+     */
+    isDefined = function(name) {
+        return !!modulesStorage[name];
+    },
+
     onNextTick = function() {
         waitForNextTick = false;
         calcDeclDeps();
@@ -85,7 +94,7 @@ var DECL_STATES = {
             j = 0;
             dependOnDecls = decl.dependOnDecls;
             while(dep = decl.deps[j++]) {
-                if(!modulesStorage[dep]) {
+                if(!isDefined(dep)) {
                     throwModuleNotFound(dep, decl);
                     break;
                 }
@@ -106,7 +115,7 @@ var DECL_STATES = {
         while(pendingRequire = pendingRequires[i++]) {
             j = 0; dependOnDecls = []; applyCb = true;
             while(dep = pendingRequire.modules[j++]) {
-                if(!modulesStorage[dep]) {
+                if(!isDefined(dep)) {
                     throwModuleNotFound(dep);
                     applyCb = false;
                     break;
@@ -335,9 +344,10 @@ var DECL_STATES = {
     })(),
 
     api = {
-        define  : define,
-        require : require,
-        options : options
+        define    : define,
+        require   : require,
+        isDefined : isDefined,
+        options   : options
     };
 
 if(typeof exports === 'object') {
