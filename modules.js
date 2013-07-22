@@ -6,7 +6,7 @@
  * http://www.opensource.org/licenses/mit-license.php
  * http://www.gnu.org/licenses/gpl.html
  *
- * @version 0.0.7
+ * @version 0.0.8
  */
 
 (function(global) {
@@ -111,10 +111,14 @@ var DECL_STATES = {
     },
 
     applyRequires = function() {
-        var pendingRequire, i = 0, j, dep, dependOnDecls, applyCb;
-        while(pendingRequire = pendingRequires[i++]) {
+        var requiresToProcess = pendingRequires,
+            require, i = 0, j, dep, dependOnDecls, applyCb;
+
+        pendingRequires = [];
+
+        while(require = requiresToProcess[i++]) {
             j = 0; dependOnDecls = []; applyCb = true;
-            while(dep = pendingRequire.modules[j++]) {
+            while(dep = require.modules[j++]) {
                 if(!isDefined(dep)) {
                     throwModuleNotFound(dep);
                     applyCb = false;
@@ -123,10 +127,8 @@ var DECL_STATES = {
 
                 dependOnDecls.push(modulesStorage[dep].decl);
             }
-            applyCb && applyRequire(dependOnDecls, pendingRequire.cb);
+            applyCb && applyRequire(dependOnDecls, require.cb);
         }
-
-        pendingRequires = [];
     },
 
     applyRequire = function(dependOnDecls, cb) {
