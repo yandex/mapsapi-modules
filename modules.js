@@ -12,9 +12,9 @@
 (function(global) {
 
 var DECL_STATES = {
-        NOT_RESOLVED : 0,
-        IN_RESOLVING : 1,
-        RESOLVED     : 2
+        NOT_RESOLVED : 'NOT_RESOLVED',
+        IN_RESOLVING : 'IN_RESOLVING',
+        RESOLVED     : 'RESOLVED'
     },
 
     curOptions = {
@@ -74,12 +74,36 @@ var DECL_STATES = {
     },
 
     /**
+     * Returns state of module
+     * @param {String} name
+     * @returns {String} state, possible values NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
+     */
+    getState = function(name) {
+        var module = modulesStorage[name];
+        return module?
+            DECL_STATES[module.decl.state] :
+            'NOT_DEFINED';
+    },
+
+    /**
      * Returns whether the module is defined
      * @param {String} name
      * @returns {Boolean}
      */
     isDefined = function(name) {
         return !!modulesStorage[name];
+    },
+
+    /**
+     * Sets options
+     * @param {Object} options
+     */
+    setOptions = function(options) {
+        for(var name in options) {
+            if(options.hasOwnProperty(name)) {
+                curOptions[name] = options[name];
+            }
+        }
     },
 
     onNextTick = function() {
@@ -232,14 +256,6 @@ var DECL_STATES = {
         return false;
     },
 
-    options = function(inputOptions) {
-        for(var name in inputOptions) {
-            if(inputOptions.hasOwnProperty(name)) {
-                curOptions[name] = inputOptions[name];
-            }
-        }
-    },
-
     throwException = function(e) {
         nextTick(function() {
             throw e;
@@ -346,10 +362,11 @@ var DECL_STATES = {
     })(),
 
     api = {
-        define    : define,
-        require   : require,
-        isDefined : isDefined,
-        options   : options
+        define     : define,
+        require    : require,
+        getState   : getState,
+        isDefined  : isDefined,
+        setOptions : setOptions
     };
 
 if(typeof exports === 'object') {
