@@ -18,7 +18,8 @@ var DECL_STATES = {
     },
 
     curOptions = {
-        trackCircularDependencies : true
+        trackCircularDependencies : true,
+        allowMultipleDeclarations : true
     },
 
     undef,
@@ -39,10 +40,19 @@ var DECL_STATES = {
             deps = [];
         }
 
-        var module = modulesStorage[name] || (modulesStorage[name] = {
+        var module = modulesStorage[name];
+        if(module) {
+            if(!curOptions.allowMultipleDeclarations) {
+                throwMultipleDeclarationDetected(name);
+                return;
+            }
+        }
+        else {
+            module = modulesStorage[name] = {
                 name : name,
                 decl : undef
-            });
+            };
+        }
 
         declsToCalc.push(module.decl = {
             name          : name,
@@ -282,6 +292,10 @@ var DECL_STATES = {
 
     throwDeclAlreadyProvided = function(decl) {
         throwException(Error('Declaration of module "' + decl.name + '" already provided'));
+    },
+
+    throwMultipleDeclarationDetected = function(name) {
+        throwException(Error('Multiple declaration of module "' + name + '" detected'));
     },
 
     nextTick = (function() {
