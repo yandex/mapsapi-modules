@@ -175,13 +175,10 @@ var DECL_STATES = {
     },
 
     requireDecls = function(decls, cb, path) {
-        var unresolvedDeclCnt = decls.length,
-            checkUnresolved = true;
+        var unresolvedDeclCnt = decls.length;
 
         if(unresolvedDeclCnt) {
-            var onDeclResolved = function() {
-                    --unresolvedDeclCnt || onDeclsResolved(decls, cb);
-                },
+            var onDeclResolved,
                 i = 0, decl;
 
             while(decl = decls[i++]) {
@@ -195,20 +192,16 @@ var DECL_STATES = {
 
                     decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
 
-                    if(decl.state === DECL_STATES.RESOLVED) { // decl was resolved synchronously
-                        --unresolvedDeclCnt;
-                    }
-                    else {
-                        decl.dependents.push(onDeclResolved);
-                        checkUnresolved = false;
-                    }
+                    decl.state === DECL_STATES.RESOLVED? // decl resolved synchronously
+                        --unresolvedDeclCnt :
+                        decl.dependents.push(onDeclResolved || (onDeclResolved = function() {
+                            --unresolvedDeclCnt || onDeclsResolved(decls, cb);
+                        }));
                 }
             }
         }
 
-        if(checkUnresolved && !unresolvedDeclCnt) {
-            onDeclsResolved(decls, cb);
-        }
+        unresolvedDeclCnt || onDeclsResolved(decls, cb);
     },
 
     onDeclsResolved = function(decls, cb) {
