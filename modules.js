@@ -316,7 +316,7 @@ var DECL_STATES = {
             };
         }
 
-        if(global.postMessage) { // modern browsers
+        if(global.postMessage && !global.opera) { // modern browsers
             var isPostMessageAsync = true;
             if(global.attachEvent) {
                 var checkAsync = function() {
