@@ -17,16 +17,24 @@ var DECL_STATES = {
         RESOLVED     : 'RESOLVED'
     },
 
-    curOptions = {
-        trackCircularDependencies : true,
-        allowMultipleDeclarations : true
-    },
-
     undef,
-    modulesStorage = {},
-    declsToCalc = [],
-    waitForNextTick = false,
-    pendingRequires = [],
+
+    /**
+     * Creates a context
+     * @returns {Object} ctx
+     */
+    genContext = function () {
+        return {
+            modulesStorage  : {},
+            declsToCals     : [],
+            waitForNextTick : false,
+            pendingRequires : [],
+            curOptions      : {
+                trackCircularDependencies : true,
+                allowMultipleDeclarations : true
+            }
+        };
+    },
 
     /**
      * Defines module
@@ -40,21 +48,21 @@ var DECL_STATES = {
             deps = [];
         }
 
-        var module = modulesStorage[name];
+        var module = this.modulesStorage[name];
         if(module) {
-            if(!curOptions.allowMultipleDeclarations) {
+            if(!this.curOptions.allowMultipleDeclarations) {
                 throwMultipleDeclarationDetected(name);
                 return;
             }
         }
         else {
-            module = modulesStorage[name] = {
+            module = this.modulesStorage[name] = {
                 name : name,
                 decl : undef
             };
         }
 
-        declsToCalc.push(module.decl = {
+        this.declsToCalc.push(module.decl = {
             name          : name,
             fn            : declFn,
             state         : DECL_STATES.NOT_RESOLVED,
@@ -72,12 +80,12 @@ var DECL_STATES = {
      * @param {Function} cb
      */
     require = function(modules, cb) {
-        if(!waitForNextTick) {
-            waitForNextTick = true;
-            nextTick(onNextTick);
+        if(!this.waitForNextTick) {
+            this.waitForNextTick = true;
+            nextTick.call(onNextTick);
         }
 
-        pendingRequires.push({
+        this.pendingRequires.push({
             modules : modules,
             cb      : cb
         });
@@ -89,7 +97,7 @@ var DECL_STATES = {
      * @returns {String} state, possible values NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
      */
     getState = function(name) {
-        var module = modulesStorage[name];
+        var module = this.modulesStorage[name];
         return module?
             DECL_STATES[module.decl.state] :
             'NOT_DEFINED';
@@ -101,7 +109,7 @@ var DECL_STATES = {
      * @returns {Boolean}
      */
     isDefined = function(name) {
-        return !!modulesStorage[name];
+        return !!this.modulesStorage[name];
     },
 
     /**
@@ -111,28 +119,28 @@ var DECL_STATES = {
     setOptions = function(options) {
         for(var name in options) {
             if(options.hasOwnProperty(name)) {
-                curOptions[name] = options[name];
+                this.curOptions[name] = options[name];
             }
         }
     },
 
     onNextTick = function() {
-        waitForNextTick = false;
-        calcDeclDeps();
-        applyRequires();
+        this.waitForNextTick = false;
+        calcDeclDeps.call(this);
+        applyRequires.call(this);
     },
 
     calcDeclDeps = function() {
         var i = 0, decl, j, dep, dependOnDecls;
-        while(decl = declsToCalc[i++]) {
+        while(decl = this.declsToCalc[i++]) {
             j = 0;
             dependOnDecls = decl.dependOnDecls;
             while(dep = decl.deps[j++]) {
-                if(!isDefined(dep)) {
+                if(!isDefined.call(this, dep)) {
                     throwModuleNotFound(dep, decl);
                     break;
                 }
-                dependOnDecls.push(modulesStorage[dep].decl);
+                dependOnDecls.push(this.modulesStorage[dep].decl);
             }
 
             if(decl.prevDecl) {
@@ -141,32 +149,33 @@ var DECL_STATES = {
             }
         }
 
-        declsToCalc = [];
+        this.declsToCalc = [];
     },
 
     applyRequires = function() {
-        var requiresToProcess = pendingRequires,
+        var requiresToProcess = this.pendingRequires,
             require, i = 0, j, dep, dependOnDecls, applyCb;
 
-        pendingRequires = [];
+        this.pendingRequires = [];
 
         while(require = requiresToProcess[i++]) {
             j = 0; dependOnDecls = []; applyCb = true;
             while(dep = require.modules[j++]) {
-                if(!isDefined(dep)) {
+                if(!isDefined.call(this, dep)) {
                     throwModuleNotFound(dep);
                     applyCb = false;
                     break;
                 }
 
-                dependOnDecls.push(modulesStorage[dep].decl);
+                dependOnDecls.push(this.modulesStorage[dep].decl);
             }
-            applyCb && applyRequire(dependOnDecls, require.cb);
+            applyCb && applyRequire.call(this, dependOnDecls, require.cb);
         }
     },
 
     applyRequire = function(dependOnDecls, cb) {
-        requireDecls(
+        requireDecls.call(
+            this,
             dependOnDecls,
             function(exports) {
                 cb.apply(global, exports);
@@ -186,11 +195,11 @@ var DECL_STATES = {
                     --unresolvedDeclCnt;
                 }
                 else {
-                    if(curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
+                    if(this.curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
                         throwCircularDependenceDetected(decl, path);
                     }
 
-                    decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
+                    decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving.call(this, decl, path);
 
                     decl.state === DECL_STATES.RESOLVED? // decl resolved synchronously
                         --unresolvedDeclCnt :
@@ -214,7 +223,7 @@ var DECL_STATES = {
     },
 
     startDeclResolving = function(decl, path) {
-        curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
+        this.curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
         decl.state = DECL_STATES.IN_RESOLVING;
         var isProvided = false;
         requireDecls(
@@ -368,13 +377,32 @@ var DECL_STATES = {
         };
     })(),
 
-    api = {
-        define     : define,
-        require    : require,
-        getState   : getState,
-        isDefined  : isDefined,
-        setOptions : setOptions
-    };
+    bindCtx = Function.prototype.bind || function (ctx) {
+        var fn = this,
+            noop = function () {},
+            bound = function () {
+                return fn.apply(ctx, Array.prototype.slice.call(arguments));
+            };
+        noop.prototype = this.prototype;
+        bonud.prototype = new noop();
+        return bonud;
+    },
+
+    genApi = function () {
+        var ctx = genContext();
+        return {
+            define     : bindCtx.call(define, ctx),
+            require    : bindCtx.call(require, ctx),
+            getState   : bindCtx.call(getState, ctx),
+            isDefined  : bindCtx.call(isDefined, ctx),
+            setOptions : bindCtx.call(setOptions, ctx)
+        };
+    },
+
+    api = genApi();
+
+// possibility to create multiple storages
+api.create = genApi;
 
 if(typeof exports === 'object') {
     module.exports = api;
