@@ -11,242 +11,257 @@
 
 (function(global) {
 
-var DECL_STATES = {
+var undef,
+    DECL_STATES = {
         NOT_RESOLVED : 'NOT_RESOLVED',
         IN_RESOLVING : 'IN_RESOLVING',
         RESOLVED     : 'RESOLVED'
     },
 
-    curOptions = {
-        trackCircularDependencies : true,
-        allowMultipleDeclarations : true
-    },
-
-    undef,
-    modulesStorage = {},
-    declsToCalc = [],
-    waitForNextTick = false,
-    pendingRequires = [],
-
     /**
-     * Defines module
-     * @param {String} name
-     * @param {String[]} [deps]
-     * @param {Function} declFn
+     * Creates a new instance of modular system
+     * @returns {Object}
      */
-    define = function(name, deps, declFn) {
-        if(!declFn) {
-            declFn = deps;
-            deps = [];
-        }
-
-        var module = modulesStorage[name];
-        if(module) {
-            if(!curOptions.allowMultipleDeclarations) {
-                throwMultipleDeclarationDetected(name);
-                return;
-            }
-        }
-        else {
-            module = modulesStorage[name] = {
-                name : name,
-                decl : undef
-            };
-        }
-
-        declsToCalc.push(module.decl = {
-            name          : name,
-            fn            : declFn,
-            state         : DECL_STATES.NOT_RESOLVED,
-            deps          : deps,
-            prevDecl      : module.decl,
-            dependOnDecls : [],
-            dependents    : [],
-            exports       : undef
-        });
-    },
-
-    /**
-     * Requires modules
-     * @param {String[]} modules
-     * @param {Function} cb
-     */
-    require = function(modules, cb) {
-        if(!waitForNextTick) {
-            waitForNextTick = true;
-            nextTick(onNextTick);
-        }
-
-        pendingRequires.push({
-            modules : modules,
-            cb      : cb
-        });
-    },
-
-    /**
-     * Returns state of module
-     * @param {String} name
-     * @returns {String} state, possible values NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
-     */
-    getState = function(name) {
-        var module = modulesStorage[name];
-        return module?
-            DECL_STATES[module.decl.state] :
-            'NOT_DEFINED';
-    },
-
-    /**
-     * Returns whether the module is defined
-     * @param {String} name
-     * @returns {Boolean}
-     */
-    isDefined = function(name) {
-        return !!modulesStorage[name];
-    },
-
-    /**
-     * Sets options
-     * @param {Object} options
-     */
-    setOptions = function(options) {
-        for(var name in options) {
-            if(options.hasOwnProperty(name)) {
-                curOptions[name] = options[name];
-            }
-        }
-    },
-
-    onNextTick = function() {
-        waitForNextTick = false;
-        calcDeclDeps();
-        applyRequires();
-    },
-
-    calcDeclDeps = function() {
-        var i = 0, decl, j, dep, dependOnDecls;
-        while(decl = declsToCalc[i++]) {
-            j = 0;
-            dependOnDecls = decl.dependOnDecls;
-            while(dep = decl.deps[j++]) {
-                if(!isDefined(dep)) {
-                    throwModuleNotFound(dep, decl);
-                    break;
-                }
-                dependOnDecls.push(modulesStorage[dep].decl);
-            }
-
-            if(decl.prevDecl) {
-                dependOnDecls.push(decl.prevDecl);
-                decl.prevDecl = undef;
-            }
-        }
-
-        declsToCalc = [];
-    },
-
-    applyRequires = function() {
-        var requiresToProcess = pendingRequires,
-            require, i = 0, j, dep, dependOnDecls, applyCb;
-
-        pendingRequires = [];
-
-        while(require = requiresToProcess[i++]) {
-            j = 0; dependOnDecls = []; applyCb = true;
-            while(dep = require.modules[j++]) {
-                if(!isDefined(dep)) {
-                    throwModuleNotFound(dep);
-                    applyCb = false;
-                    break;
-                }
-
-                dependOnDecls.push(modulesStorage[dep].decl);
-            }
-            applyCb && applyRequire(dependOnDecls, require.cb);
-        }
-    },
-
-    applyRequire = function(dependOnDecls, cb) {
-        requireDecls(
-            dependOnDecls,
-            function(exports) {
-                cb.apply(global, exports);
+    create = function() {
+        var curOptions = {
+                trackCircularDependencies : true,
+                allowMultipleDeclarations : true
             },
-            []);
-    },
 
-    requireDecls = function(decls, cb, path) {
-        var unresolvedDeclCnt = decls.length;
+            modulesStorage = {},
+            declsToCalc = [],
+            waitForNextTick = false,
+            pendingRequires = [],
 
-        if(unresolvedDeclCnt) {
-            var onDeclResolved,
-                i = 0, decl;
+            /**
+             * Defines module
+             * @param {String} name
+             * @param {String[]} [deps]
+             * @param {Function} declFn
+             */
+            define = function(name, deps, declFn) {
+                if(!declFn) {
+                    declFn = deps;
+                    deps = [];
+                }
 
-            while(decl = decls[i++]) {
-                if(decl.state === DECL_STATES.RESOLVED) {
-                    --unresolvedDeclCnt;
+                var module = modulesStorage[name];
+                if(module) {
+                    if(!curOptions.allowMultipleDeclarations) {
+                        throwMultipleDeclarationDetected(name);
+                        return;
+                    }
                 }
                 else {
-                    if(curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
-                        throwCircularDependenceDetected(decl, path);
+                    module = modulesStorage[name] = {
+                        name : name,
+                        decl : undef
+                    };
+                }
+
+                declsToCalc.push(module.decl = {
+                    name          : name,
+                    fn            : declFn,
+                    state         : DECL_STATES.NOT_RESOLVED,
+                    deps          : deps,
+                    prevDecl      : module.decl,
+                    dependOnDecls : [],
+                    dependents    : [],
+                    exports       : undef
+                });
+            },
+
+            /**
+             * Requires modules
+             * @param {String[]} modules
+             * @param {Function} cb
+             */
+            require = function(modules, cb) {
+                if(!waitForNextTick) {
+                    waitForNextTick = true;
+                    nextTick(onNextTick);
+                }
+
+                pendingRequires.push({
+                    modules : modules,
+                    cb      : cb
+                });
+            },
+
+            /**
+             * Returns state of module
+             * @param {String} name
+             * @returns {String} state, possible values NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
+             */
+            getState = function(name) {
+                var module = modulesStorage[name];
+                return module?
+                    DECL_STATES[module.decl.state] :
+                    'NOT_DEFINED';
+            },
+
+            /**
+             * Returns whether the module is defined
+             * @param {String} name
+             * @returns {Boolean}
+             */
+            isDefined = function(name) {
+                return !!modulesStorage[name];
+            },
+
+            /**
+             * Sets options
+             * @param {Object} options
+             */
+            setOptions = function(options) {
+                for(var name in options) {
+                    if(options.hasOwnProperty(name)) {
+                        curOptions[name] = options[name];
+                    }
+                }
+            },
+
+            onNextTick = function() {
+                waitForNextTick = false;
+                calcDeclDeps();
+                applyRequires();
+            },
+
+            calcDeclDeps = function() {
+                var i = 0, decl, j, dep, dependOnDecls;
+                while(decl = declsToCalc[i++]) {
+                    j = 0;
+                    dependOnDecls = decl.dependOnDecls;
+                    while(dep = decl.deps[j++]) {
+                        if(!isDefined(dep)) {
+                            throwModuleNotFound(dep, decl);
+                            break;
+                        }
+                        dependOnDecls.push(modulesStorage[dep].decl);
                     }
 
-                    decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
-
-                    decl.state === DECL_STATES.RESOLVED? // decl resolved synchronously
-                        --unresolvedDeclCnt :
-                        decl.dependents.push(onDeclResolved || (onDeclResolved = function() {
-                            --unresolvedDeclCnt || onDeclsResolved(decls, cb);
-                        }));
+                    if(decl.prevDecl) {
+                        dependOnDecls.push(decl.prevDecl);
+                        decl.prevDecl = undef;
+                    }
                 }
-            }
-        }
 
-        unresolvedDeclCnt || onDeclsResolved(decls, cb);
-    },
-
-    onDeclsResolved = function(decls, cb) {
-        var exports = [],
-            i = 0, decl;
-        while(decl = decls[i++]) {
-            exports.push(decl.exports);
-        }
-        cb(exports);
-    },
-
-    startDeclResolving = function(decl, path) {
-        curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
-        decl.state = DECL_STATES.IN_RESOLVING;
-        var isProvided = false;
-        requireDecls(
-            decl.dependOnDecls,
-            function(depDeclsExports) {
-                decl.fn.apply(
-                    {
-                        name   : decl.name,
-                        deps   : decl.deps,
-                        global : global
-                    },
-                    [function(exports) {
-                        isProvided?
-                            throwDeclAlreadyProvided(decl) :
-                            isProvided = true;
-                        provideDecl(decl, exports);
-                        return exports;
-                    }].concat(depDeclsExports));
+                declsToCalc = [];
             },
-            path);
-    },
 
-    provideDecl = function(decl, exports) {
-        decl.exports = exports;
-        decl.state = DECL_STATES.RESOLVED;
+            applyRequires = function() {
+                var requiresToProcess = pendingRequires,
+                    require, i = 0, j, dep, dependOnDecls, applyCb;
 
-        var i = 0, dependent;
-        while(dependent = decl.dependents[i++]) {
-            dependent(decl.exports);
-        }
+                pendingRequires = [];
 
-        decl.dependents = undef;
+                while(require = requiresToProcess[i++]) {
+                    j = 0; dependOnDecls = []; applyCb = true;
+                    while(dep = require.modules[j++]) {
+                        if(!isDefined(dep)) {
+                            throwModuleNotFound(dep);
+                            applyCb = false;
+                            break;
+                        }
+
+                        dependOnDecls.push(modulesStorage[dep].decl);
+                    }
+                    applyCb && applyRequire(dependOnDecls, require.cb);
+                }
+            },
+
+            applyRequire = function(dependOnDecls, cb) {
+                requireDecls(
+                    dependOnDecls,
+                    function(exports) {
+                        cb.apply(global, exports);
+                    },
+                    []);
+            },
+
+            requireDecls = function(decls, cb, path) {
+                var unresolvedDeclCnt = decls.length;
+
+                if(unresolvedDeclCnt) {
+                    var onDeclResolved,
+                        i = 0, decl;
+
+                    while(decl = decls[i++]) {
+                        if(decl.state === DECL_STATES.RESOLVED) {
+                            --unresolvedDeclCnt;
+                        }
+                        else {
+                            if(curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
+                                throwCircularDependenceDetected(decl, path);
+                            }
+
+                            decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
+
+                            decl.state === DECL_STATES.RESOLVED? // decl resolved synchronously
+                                --unresolvedDeclCnt :
+                                decl.dependents.push(onDeclResolved || (onDeclResolved = function() {
+                                    --unresolvedDeclCnt || onDeclsResolved(decls, cb);
+                                }));
+                        }
+                    }
+                }
+
+                unresolvedDeclCnt || onDeclsResolved(decls, cb);
+            },
+
+            onDeclsResolved = function(decls, cb) {
+                var exports = [],
+                    i = 0, decl;
+                while(decl = decls[i++]) {
+                    exports.push(decl.exports);
+                }
+                cb(exports);
+            },
+
+            startDeclResolving = function(decl, path) {
+                curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
+                decl.state = DECL_STATES.IN_RESOLVING;
+                var isProvided = false;
+                requireDecls(
+                    decl.dependOnDecls,
+                    function(depDeclsExports) {
+                        decl.fn.apply(
+                            {
+                                name   : decl.name,
+                                deps   : decl.deps,
+                                global : global
+                            },
+                            [function(exports) {
+                                isProvided?
+                                    throwDeclAlreadyProvided(decl) :
+                                    isProvided = true;
+                                provideDecl(decl, exports);
+                                return exports;
+                            }].concat(depDeclsExports));
+                    },
+                    path);
+            },
+
+            provideDecl = function(decl, exports) {
+                decl.exports = exports;
+                decl.state = DECL_STATES.RESOLVED;
+
+                var i = 0, dependent;
+                while(dependent = decl.dependents[i++]) {
+                    dependent(decl.exports);
+                }
+
+                decl.dependents = undef;
+            };
+
+        return {
+            create     : create,
+            define     : define,
+            require    : require,
+            getState   : getState,
+            isDefined  : isDefined,
+            setOptions : setOptions
+        };
     },
 
     isDependenceCircular = function(decl, path) {
@@ -366,21 +381,13 @@ var DECL_STATES = {
         return function(fn) { // old browsers
             enqueueFn(fn) && setTimeout(callFns, 0);
         };
-    })(),
-
-    api = {
-        define     : define,
-        require    : require,
-        getState   : getState,
-        isDefined  : isDefined,
-        setOptions : setOptions
-    };
+    })();
 
 if(typeof exports === 'object') {
-    module.exports = api;
+    module.exports = create();
 }
 else {
-    global.modules = api;
+    global.modules = create();
 }
 
 })(this);
