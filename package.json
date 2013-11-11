@@ -17,9 +17,10 @@
     "engines" : { "node" : ">= 0.4.0" },
     "devDependencies": {
         "jshint" : "2.3.0",
-        "jscs" : "1.0.0"
+        "jscs" : "1.0.0",
+        "mocha" : "1.14.x"
     },
     "scripts" : {
-        "test" : "make lint"
+        "test" : "make test"
     }
 }

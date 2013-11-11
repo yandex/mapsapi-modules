@@ -5,3 +5,8 @@ lint:
 	@$(NPM_BIN)/jscs modules.js
 
 .PHONY: lint
+
+test: lint
+	@$(NPM_BIN)/mocha
+
+.PHONY: test
