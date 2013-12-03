@@ -20,7 +20,7 @@
 ````javascript
 void modules.define(
     String moduleName,
-    [Array<String> dependencies],
+    [String[] dependencies],
     Function(
         Function(Object objectToProvide) provide,
         [Object resolvedDependency, ...],
@@ -31,7 +31,7 @@ void modules.define(
 ####Подключение модуля####
 ````javascript
 void modules.require(
-    Array<String> dependencies,
+    String[] dependencies,
     Function(
         [Object resolvedDependency, ...]
     ) callbackFunction
