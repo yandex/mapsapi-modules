@@ -1,6 +1,8 @@
 Модульная система [![Build Status](https://travis-ci.org/ymaps/modules.png?branch=master)](https://travis-ci.org/ymaps/modules)
 =================
 
+[Что это? Зачем и для кого? Как пользоваться?](https://github.com/ymaps/modules/blob/master/what-is-this.md)
+
 ####Требования####
   1. Асинхронный require модулей
   2. Асинхронный provide модулей
