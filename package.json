@@ -1,9 +1,9 @@
 {
     "name" : "ym",
     "version" : "0.0.12",
-    "description" : "Async modules system",
+    "description" : "Async modular system",
     "homepage" : "https://github.com/ymaps/modules",
-    "keywords" : ["javascript", "module", "async"],
+    "keywords" : ["javascript", "module", "async", "dependency", "injection"],
     "author" : "",
     "contributors" : [{
         "name"  : "Dmitry Filatov",
