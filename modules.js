@@ -25,7 +25,10 @@ var undef,
     create = function() {
         var curOptions = {
                 trackCircularDependencies : true,
-                allowMultipleDeclarations : true
+                allowMultipleDeclarations : true,
+                onError                   : function(e) {
+                    throw e;
+                }
             },
 
             modulesStorage = {},
@@ -48,7 +51,7 @@ var undef,
                 var module = modulesStorage[name];
                 if(module) {
                     if(!curOptions.allowMultipleDeclarations) {
-                        throwMultipleDeclarationDetected(name);
+                        onMultipleDeclarationDetected(name);
                         return;
                     }
                 }
@@ -134,7 +137,7 @@ var undef,
                     dependOnDecls = decl.dependOnDecls;
                     while(dep = decl.deps[j++]) {
                         if(!isDefined(dep)) {
-                            throwModuleNotFound(dep, decl);
+                            onModuleNotFound(dep, decl);
                             break;
                         }
                         dependOnDecls.push(modulesStorage[dep].decl);
@@ -159,7 +162,7 @@ var undef,
                     j = 0; dependOnDecls = []; applyCb = true;
                     while(dep = require.modules[j++]) {
                         if(!isDefined(dep)) {
-                            throwModuleNotFound(dep);
+                            onModuleNotFound(dep);
                             applyCb = false;
                             break;
                         }
@@ -192,7 +195,7 @@ var undef,
                         }
                         else {
                             if(curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
-                                throwCircularDependenceDetected(decl, path);
+                                onCircularDependenceDetected(decl, path);
                             }
 
                             decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
@@ -233,7 +236,7 @@ var undef,
                             },
                             [function(exports) {
                                 isProvided?
-                                    throwDeclAlreadyProvided(decl) :
+                                    onDeclAlreadyProvided(decl) :
                                     isProvided = true;
                                 provideDecl(decl, exports);
                                 return exports;
@@ -252,6 +255,38 @@ var undef,
                 }
 
                 decl.dependents = undef;
+            },
+
+            onError = function(e) {
+                nextTick(function() {
+                    curOptions.onError(e);
+                });
+            },
+
+            onModuleNotFound = function(name, decl) {
+                onError(Error(
+                    decl?
+                        'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
+                        'Can\'t resolve required module "' + name + '"'));
+            },
+
+            onCircularDependenceDetected = function(decl, path) {
+                var strPath = [],
+                    i = 0, pathDecl;
+                while(pathDecl = path[i++]) {
+                    strPath.push(pathDecl.name);
+                }
+                strPath.push(decl.name);
+
+                onError(Error('Circular dependence detected "' + strPath.join(' -> ') + '"'));
+            },
+
+            onDeclAlreadyProvided = function(decl) {
+                onError(Error('Declaration of module "' + decl.name + '" already provided'));
+            },
+
+            onMultipleDeclarationDetected = function(name) {
+                onError(Error('Multiple declaration of module "' + name + '" detected'));
             };
 
         return {
@@ -272,38 +307,6 @@ var undef,
             }
         }
         return false;
-    },
-
-    throwException = function(e) {
-        nextTick(function() {
-            throw e;
-        });
-    },
-
-    throwModuleNotFound = function(name, decl) {
-        throwException(Error(
-            decl?
-                'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
-                'Can\'t resolve required module "' + name + '"'));
-    },
-
-    throwCircularDependenceDetected = function(decl, path) {
-        var strPath = [],
-            i = 0, pathDecl;
-        while(pathDecl = path[i++]) {
-            strPath.push(pathDecl.name);
-        }
-        strPath.push(decl.name);
-
-        throwException(Error('Circular dependence detected "' + strPath.join(' -> ') + '"'));
-    },
-
-    throwDeclAlreadyProvided = function(decl) {
-        throwException(Error('Declaration of module "' + decl.name + '" already provided'));
-    },
-
-    throwMultipleDeclarationDetected = function(name) {
-        throwException(Error('Multiple declaration of module "' + name + '" detected'));
     },
 
     nextTick = (function() {
