@@ -94,7 +94,7 @@ var undef,
             /**
              * Returns state of module
              * @param {String} name
-             * @returns {String} state, possible values NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
+             * @returns {String} state, possible values are NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
              */
             getState = function(name) {
                 var module = modulesStorage[name];
@@ -267,7 +267,7 @@ var undef,
                 onError(Error(
                     decl?
                         'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
-                        'Can\'t resolve required module "' + name + '"'));
+                        'Required module "' + name + '" can\'t be resolved'));
             },
 
             onCircularDependenceDetected = function(decl, path) {
@@ -278,15 +278,15 @@ var undef,
                 }
                 strPath.push(decl.name);
 
-                onError(Error('Circular dependence detected "' + strPath.join(' -> ') + '"'));
+                onError(Error('Circular dependence is detected: "' + strPath.join(' -> ') + '"'));
             },
 
             onDeclAlreadyProvided = function(decl) {
-                onError(Error('Declaration of module "' + decl.name + '" already provided'));
+                onError(Error('Declaration of module "' + decl.name + '" is already provided'));
             },
 
             onMultipleDeclarationDetected = function(name) {
-                onError(Error('Multiple declaration of module "' + name + '" detected'));
+                onError(Error('Multiple declarations of module "' + name + '" are detected'));
             };
 
         return {
