@@ -126,21 +126,28 @@ var undef,
 
             onNextTick = function() {
                 waitForNextTick = false;
-                calcDeclDeps();
-                applyRequires();
+                if(calcDeclDeps()) {
+                    applyRequires();
+                }
             },
 
             calcDeclDeps = function() {
-                var i = 0, decl, j, dep, dependOnDecls;
+                var i = 0, decl, j, dep, dependOnDecls,
+                    hasError = false;
                 while(decl = declsToCalc[i++]) {
                     j = 0;
                     dependOnDecls = decl.dependOnDecls;
                     while(dep = decl.deps[j++]) {
                         if(!isDefined(dep)) {
                             onModuleNotFound(dep, decl);
+                            hasError = true;
                             break;
                         }
                         dependOnDecls.push(modulesStorage[dep].decl);
+                    }
+
+                    if(hasError) {
+                        break;
                     }
 
                     if(decl.prevDecl) {
@@ -150,6 +157,7 @@ var undef,
                 }
 
                 declsToCalc = [];
+                return !hasError;
             },
 
             applyRequires = function() {
