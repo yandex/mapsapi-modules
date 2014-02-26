@@ -1,24 +1,29 @@
-Модульная система [![NPM version](https://badge.fury.io/js/ym.png)](http://badge.fury.io/js/ym) [![Build Status](https://travis-ci.org/ymaps/modules.png?branch=master)](https://travis-ci.org/ymaps/modules)
+Modular system [![NPM version](https://badge.fury.io/js/ym.png)](http://badge.fury.io/js/ym) [![Build Status](https://travis-ci.org/ymaps/modules.png?branch=master)](https://travis-ci.org/ymaps/modules)
 =================
 
-[Что это? Зачем и для кого? Как пользоваться?](https://github.com/ymaps/modules/blob/master/what-is-this.md)
+[по-русски](https://github.com/ymaps/modules/blob/master/README.ru.md)
 
-####Требования####
-  1. Асинхронный require модулей
-  2. Асинхронный provide модулей
-  3. Возможность передекларации/додекларации модуля
-  4. С учетом пункта 3, зависимости должны разрешаться в пределах одного поколения деклараций (поколение образуют декларации модулей в пределах одного тика eventloop)
+[What? Why and what for? How to
+use?](https://github.com/ymaps/modules/blob/master/what-is-this.md) (ru)
 
-####Почему не CommonJS?####
-Смотри пункты 1, 2 и 3 требований
+####Requirements####
+  1. Asynchronous require for modules
+  2. Asynchronous provide for modules модулей
+  3. Extending and redefining a module
+  4. Assuming #3, the dependencies have to be resolved within the same
+  generation of declarations; The generation includes the declarations within
+  one eventloop tick.
 
-####Почему не AMD?####
-Смотри пункты 2 и 3 требований
+####Why not CommonJS?####
+See #1, #2 and #3 in the list of requirements.
 
-Спецификация API
+####Why not AMD?####
+See #2 and #3 in the list of requirements.
+
+API spec
 ----------------
 
-####Объявление модуля####
+####Defining a module####
 ````javascript
 void modules.define(
     String moduleName,
@@ -30,7 +35,7 @@ void modules.define(
     ) declarationFunction
 )
 ````
-####Подключение модуля####
+####Requirering a module####
 ````javascript
 void modules.require(
     String[] dependencies,
@@ -40,7 +45,7 @@ void modules.require(
 )
 ````
 
-####Пример####
+####Example####
 
 ````javascript
 modules.define(
