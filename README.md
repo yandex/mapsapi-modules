@@ -23,7 +23,7 @@ See #2 and #3 in the list of requirements.
 API spec
 ----------------
 
-####Defining a module####
+####Module declaration####
 ````javascript
 void modules.define(
     String moduleName,
@@ -35,7 +35,7 @@ void modules.define(
     ) declarationFunction
 )
 ````
-####Requirering a module####
+####Module usage####
 ````javascript
 void modules.require(
     String[] dependencies,
