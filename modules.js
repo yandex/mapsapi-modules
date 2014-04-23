@@ -76,10 +76,14 @@ var undef,
 
             /**
              * Requires modules
-             * @param {String[]} modules
+             * @param {String|String[]} modules
              * @param {Function} cb
              */
             require = function(modules, cb) {
+                if(typeof modules === 'string') {
+                    modules = [modules];
+                }
+
                 if(!waitForNextTick) {
                     waitForNextTick = true;
                     nextTick(onNextTick);
