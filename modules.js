@@ -173,7 +173,15 @@ var undef,
                 while(require = requiresToProcess[i++]) {
                     j = 0; dependOnDecls = []; applyCb = true;
                     while(dep = require.modules[j++]) {
-                        if(!isDefined(dep)) {
+                        if(!isDefined(dep) && typeof curOptions.findDep === 'function' && typeof curOptions.loadModule === 'function' && curOptions.findDep(dep)) {
+                            curOptions.loadModule(dep, function() {
+                                pendingRequires = requiresToProcess;
+                                nextTick(onNextTick);
+                            });
+
+                            applyCb = false;
+                            break;
+                        } else if (!isDefined(dep)) {
                             onModuleNotFound(dep);
                             applyCb = false;
                             break;
