@@ -181,7 +181,8 @@ var undef,
 
                             applyCb = false;
                             break;
-                        } else if (!isDefined(dep)) {
+                        }
+                        else if(!isDefined(dep)) {
                             onModuleNotFound(dep);
                             applyCb = false;
                             break;
