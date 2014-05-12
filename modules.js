@@ -152,7 +152,21 @@ var undef,
                 while(i < len) {
                     dep = deps[i++];
                     if(typeof dep === 'string') {
-                        if(!modulesStorage[dep]) {
+                        if(!modulesStorage[dep] && typeof curOptions.findDep === 'function' && typeof curOptions.loadModule === 'function' && curOptions.findDep(dep)) {
+                            (function(dep, deps, cb) {
+                                curOptions.loadModule(dep, function() {
+                                    pendingRequires.push({
+                                        'deps': deps,
+                                        'cb': cb
+                                    });
+
+                                    nextTick(onNextTick);
+                                });
+                            }(dep, deps, cb));
+
+                            return;
+                        }
+                        else if(!modulesStorage[dep]) {
                             cb(null, buildModuleNotFoundError(dep, fromDecl));
                             return;
                         }
