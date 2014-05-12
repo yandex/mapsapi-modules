@@ -156,8 +156,8 @@ var undef,
                             (function(dep, deps, cb) {
                                 curOptions.loadModule(dep, function() {
                                     pendingRequires.push({
-                                        'deps': deps,
-                                        'cb': cb
+                                        deps : deps,
+                                        cb   : cb
                                     });
 
                                     nextTick(onNextTick);
