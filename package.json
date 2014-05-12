@@ -1,6 +1,6 @@
 {
     "name" : "ym",
-    "version" : "0.0.15",
+    "version" : "0.1.0",
     "description" : "Async modular system",
     "homepage" : "https://github.com/ymaps/modules",
     "keywords" : ["javascript", "module", "async", "dependency", "injection"],
@@ -17,9 +17,11 @@
     "engines" : { "node" : ">= 0.4.0" },
     "devDependencies": {
         "jshint" : "2.3.0",
-        "jscs" : "1.0.0"
+        "jscs" : "1.0.0",
+        "mocha": "1.18.2",
+        "chai" : "1.9.1"
     },
     "scripts" : {
-        "test" : "make lint"
+        "test" : "make lint && make test"
     }
 }

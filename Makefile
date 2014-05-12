@@ -5,3 +5,7 @@ lint:
 	@$(NPM_BIN)/jscs modules.js
 
 .PHONY: lint
+
+.PHONY: test
+test:
+	@$(NPM_BIN)/mocha -u bdd -R spec --recursive

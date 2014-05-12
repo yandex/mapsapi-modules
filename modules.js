@@ -6,12 +6,13 @@
  * http://www.opensource.org/licenses/mit-license.php
  * http://www.gnu.org/licenses/gpl.html
  *
- * @version 0.0.15
+ * @version 0.1.0
  */
 
 (function(global) {
 
 var undef,
+
     DECL_STATES = {
         NOT_RESOLVED : 'NOT_RESOLVED',
         IN_RESOLVING : 'IN_RESOLVING',
@@ -25,14 +26,10 @@ var undef,
     create = function() {
         var curOptions = {
                 trackCircularDependencies : true,
-                allowMultipleDeclarations : true,
-                onError                   : function(e) {
-                    throw e;
-                }
+                allowMultipleDeclarations : true
             },
 
             modulesStorage = {},
-            declsToCalc = [],
             waitForNextTick = false,
             pendingRequires = [],
 
@@ -49,37 +46,31 @@ var undef,
                 }
 
                 var module = modulesStorage[name];
-                if(module) {
-                    if(!curOptions.allowMultipleDeclarations) {
-                        onMultipleDeclarationDetected(name);
-                        return;
-                    }
-                }
-                else {
+                if(!module) {
                     module = modulesStorage[name] = {
                         name : name,
                         decl : undef
                     };
                 }
 
-                declsToCalc.push(module.decl = {
-                    name          : name,
-                    fn            : declFn,
-                    state         : DECL_STATES.NOT_RESOLVED,
-                    deps          : deps,
-                    prevDecl      : module.decl,
-                    dependOnDecls : [],
-                    dependents    : [],
-                    exports       : undef
-                });
+                module.decl = {
+                    name       : name,
+                    prev       : module.decl,
+                    fn         : declFn,
+                    state      : DECL_STATES.NOT_RESOLVED,
+                    deps       : deps,
+                    dependents : [],
+                    exports    : undef
+                };
             },
 
             /**
              * Requires modules
              * @param {String|String[]} modules
              * @param {Function} cb
+             * @param {Function} [errorCb]
              */
-            require = function(modules, cb) {
+            require = function(modules, cb, errorCb) {
                 if(typeof modules === 'string') {
                     modules = [modules];
                 }
@@ -90,8 +81,12 @@ var undef,
                 }
 
                 pendingRequires.push({
-                    modules : modules,
-                    cb      : cb
+                    deps : modules,
+                    cb   : function(exports, error) {
+                        error?
+                            (errorCb || onError)(error) :
+                            cb.apply(global, exports);
+                    }
                 });
             },
 
@@ -130,140 +125,128 @@ var undef,
 
             onNextTick = function() {
                 waitForNextTick = false;
-                if(calcDeclDeps()) {
-                    applyRequires();
-                }
-            },
-
-            calcDeclDeps = function() {
-                var i = 0, decl, j, dep, dependOnDecls,
-                    hasError = false;
-                while(decl = declsToCalc[i++]) {
-                    j = 0;
-                    dependOnDecls = decl.dependOnDecls;
-                    while(dep = decl.deps[j++]) {
-                        if(!isDefined(dep)) {
-                            onModuleNotFound(dep, decl);
-                            hasError = true;
-                            break;
-                        }
-                        dependOnDecls.push(modulesStorage[dep].decl);
-                    }
-
-                    if(hasError) {
-                        break;
-                    }
-
-                    if(decl.prevDecl) {
-                        dependOnDecls.push(decl.prevDecl);
-                        decl.prevDecl = undef;
-                    }
-                }
-
-                declsToCalc = [];
-                return !hasError;
+                applyRequires();
             },
 
             applyRequires = function() {
                 var requiresToProcess = pendingRequires,
-                    require, i = 0, j, dep, dependOnDecls, applyCb;
+                    i = 0, require;
 
                 pendingRequires = [];
 
                 while(require = requiresToProcess[i++]) {
-                    j = 0; dependOnDecls = []; applyCb = true;
-                    while(dep = require.modules[j++]) {
-                        if(!isDefined(dep) && typeof curOptions.findDep === 'function' && typeof curOptions.loadModule === 'function' && curOptions.findDep(dep)) {
-                            curOptions.loadModule(dep, function() {
-                                pendingRequires = requiresToProcess;
-                                nextTick(onNextTick);
-                            });
-
-                            applyCb = false;
-                            break;
-                        }
-                        else if(!isDefined(dep)) {
-                            onModuleNotFound(dep);
-                            applyCb = false;
-                            break;
-                        }
-
-                        dependOnDecls.push(modulesStorage[dep].decl);
-                    }
-                    applyCb && applyRequire(dependOnDecls, require.cb);
+                    requireDeps(null, require.deps, [], require.cb);
                 }
             },
 
-            applyRequire = function(dependOnDecls, cb) {
-                requireDecls(
-                    dependOnDecls,
-                    function(exports) {
-                        cb.apply(global, exports);
-                    },
-                    []);
-            },
+            requireDeps = function(fromDecl, deps, path, cb) {
+                var unresolvedDepsCnt = deps.length;
+                if(!unresolvedDepsCnt) {
+                    cb([]);
+                }
 
-            requireDecls = function(decls, cb, path) {
-                var unresolvedDeclCnt = decls.length;
+                var decls = [],
+                    i = 0, len = unresolvedDepsCnt,
+                    dep, decl;
 
-                if(unresolvedDeclCnt) {
-                    var onDeclResolved,
-                        i = 0, decl;
-
-                    while(decl = decls[i++]) {
-                        if(decl.state === DECL_STATES.RESOLVED) {
-                            --unresolvedDeclCnt;
+                while(i < len) {
+                    dep = deps[i++];
+                    if(typeof dep === 'string') {
+                        if(!modulesStorage[dep]) {
+                            cb(null, buildModuleNotFoundError(dep, fromDecl));
+                            return;
                         }
-                        else {
-                            if(curOptions.trackCircularDependencies && isDependenceCircular(decl, path)) {
-                                onCircularDependenceDetected(decl, path);
+
+                        decl = modulesStorage[dep].decl;
+                    }
+                    else {
+                        decl = dep;
+                    }
+
+                    if(decl.state === DECL_STATES.IN_RESOLVING &&
+                            curOptions.trackCircularDependencies &&
+                            isDependenceCircular(decl, path)) {
+                        cb(null, buildCircularDependenceError(decl, path));
+                        return;
+                    }
+
+                    decls.push(decl);
+
+                    startDeclResolving(
+                        decl,
+                        path,
+                        function(_, error) {
+                            if(error) {
+                                cb(null, error);
+                                return;
                             }
 
-                            decl.state === DECL_STATES.NOT_RESOLVED && startDeclResolving(decl, path);
-
-                            decl.state === DECL_STATES.RESOLVED? // decl resolved synchronously
-                                --unresolvedDeclCnt :
-                                decl.dependents.push(onDeclResolved || (onDeclResolved = function() {
-                                    --unresolvedDeclCnt || onDeclsResolved(decls, cb);
-                                }));
-                        }
-                    }
+                            if(!--unresolvedDepsCnt) {
+                                var exports = [],
+                                    i = 0, decl;
+                                while(decl = decls[i++]) {
+                                    exports.push(decl.exports);
+                                }
+                                cb(exports);
+                            }
+                        });
                 }
-
-                unresolvedDeclCnt || onDeclsResolved(decls, cb);
             },
 
-            onDeclsResolved = function(decls, cb) {
-                var exports = [],
-                    i = 0, decl;
-                while(decl = decls[i++]) {
-                    exports.push(decl.exports);
+            startDeclResolving = function(decl, path, cb) {
+                if(decl.state === DECL_STATES.RESOLVED) {
+                    cb(decl.exports);
+                    return;
                 }
-                cb(exports);
-            },
+                else {
+                    decl.dependents.push(cb);
+                }
 
-            startDeclResolving = function(decl, path) {
+                if(decl.state === DECL_STATES.IN_RESOLVING) {
+                    return;
+                }
+
+                if(decl.prev && !curOptions.allowMultipleDeclarations) {
+                    provideError(decl, buildMultipleDeclarationError(decl));
+                    return;
+                }
+
                 curOptions.trackCircularDependencies && (path = path.slice()).push(decl);
+
+                var isProvided = false,
+                    deps = decl.prev? decl.deps.concat([decl.prev]) : decl.deps;
+
                 decl.state = DECL_STATES.IN_RESOLVING;
-                var isProvided = false;
-                requireDecls(
-                    decl.dependOnDecls,
-                    function(depDeclsExports) {
+                requireDeps(
+                    decl,
+                    deps,
+                    path,
+                    function(depDeclsExports, error) {
+                        if(error) {
+                            provideError(decl, error);
+                            return;
+                        }
+
+                        depDeclsExports.unshift(function(exports, error) {
+                            if(isProvided) {
+                                cb(null, buildDeclAreadyProvidedError(decl));
+                                return;
+                            }
+
+                            isProvided = true;
+                            error?
+                                provideError(decl, error) :
+                                provideDecl(decl, exports);
+                        });
+
                         decl.fn.apply(
                             {
                                 name   : decl.name,
                                 deps   : decl.deps,
                                 global : global
                             },
-                            [function(exports) {
-                                isProvided?
-                                    onDeclAlreadyProvided(decl) :
-                                    isProvided = true;
-                                provideDecl(decl, exports);
-                                return exports;
-                            }].concat(depDeclsExports));
-                    },
-                    path);
+                            depDeclsExports);
+                    });
             },
 
             provideDecl = function(decl, exports) {
@@ -272,42 +255,21 @@ var undef,
 
                 var i = 0, dependent;
                 while(dependent = decl.dependents[i++]) {
-                    dependent(decl.exports);
+                    dependent(exports);
                 }
 
                 decl.dependents = undef;
             },
 
-            onError = function(e) {
-                nextTick(function() {
-                    curOptions.onError(e);
-                });
-            },
+            provideError = function(decl, error) {
+                decl.state = DECL_STATES.NOT_RESOLVED;
 
-            onModuleNotFound = function(name, decl) {
-                onError(Error(
-                    decl?
-                        'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
-                        'Required module "' + name + '" can\'t be resolved'));
-            },
-
-            onCircularDependenceDetected = function(decl, path) {
-                var strPath = [],
-                    i = 0, pathDecl;
-                while(pathDecl = path[i++]) {
-                    strPath.push(pathDecl.name);
+                var i = 0, dependent;
+                while(dependent = decl.dependents[i++]) {
+                    dependent(null, error);
                 }
-                strPath.push(decl.name);
 
-                onError(Error('Circular dependence is detected: "' + strPath.join(' -> ') + '"'));
-            },
-
-            onDeclAlreadyProvided = function(decl) {
-                onError(Error('Declaration of module "' + decl.name + '" is already provided'));
-            },
-
-            onMultipleDeclarationDetected = function(name) {
-                onError(Error('Multiple declarations of module "' + name + '" are detected'));
+                decl.dependents = [];
             };
 
         return {
@@ -318,6 +280,37 @@ var undef,
             isDefined  : isDefined,
             setOptions : setOptions
         };
+    },
+
+    onError = function(e) {
+        nextTick(function() {
+            throw e;
+        });
+    },
+
+    buildModuleNotFoundError = function(name, decl) {
+        return Error(decl?
+            'Module "' + decl.name + '": can\'t resolve dependence "' + name + '"' :
+            'Required module "' + name + '" can\'t be resolved');
+    },
+
+    buildCircularDependenceError = function(decl, path) {
+        var strPath = [],
+            i = 0, pathDecl;
+        while(pathDecl = path[i++]) {
+            strPath.push(pathDecl.name);
+        }
+        strPath.push(decl.name);
+
+        return Error('Circular dependence has been detected: "' + strPath.join(' -> ') + '"');
+    },
+
+    buildDeclAreadyProvidedError = function(decl) {
+        return Error('Declaration of module "' + decl.name + '" has already been provided');
+    },
+
+    buildMultipleDeclarationError = function(decl) {
+        return Error('Multiple declarations of module "' + decl.name + '" have been detected');
     },
 
     isDependenceCircular = function(decl, path) {
