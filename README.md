@@ -12,7 +12,7 @@ use?](https://github.com/ymaps/modules/blob/master/what-is-this.md) (ru)
   3. Extending and redefining a module
   4. Assuming #3, the dependencies have to be resolved within the same
   generation of declarations; The generation includes the declarations within
-  one eventloop tick.
+  one eventloop turn.
 
 ####Why not CommonJS?####
 See #1, #2 and #3 in the list of requirements.
