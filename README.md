@@ -8,7 +8,7 @@ use?](https://github.com/ymaps/modules/blob/master/what-is-this.md) (ru)
 
 ####Requirements####
   1. Asynchronous require for modules
-  2. Asynchronous provide for modules модулей
+  2. Asynchronous provide for modules
   3. Extending and redefining a module
   4. Assuming #3, the dependencies have to be resolved within the same
   generation of declarations; The generation includes the declarations within
