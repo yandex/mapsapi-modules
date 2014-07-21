@@ -79,3 +79,59 @@ modules.require(
     // module 'A' now resolved to a
   });
 ````
+
+####Дополнение к YModules####
+
+В дополнение сделана возможность обработать возможность догрузки модуля по имени, если такого модуля в системе не зарегистированно
+
+````javascript
+modules.setOptions({
+    /**
+     * Функция поиска модуля
+     *
+     * @param  {String}     moduleName  Имя модуля, который не зарегистирован в системе
+     * @return {Boolean}                Можно ли этот модуль загрузить
+     */
+    findDep: function( moduleName ) {
+        // body...
+    },
+    /**
+     * Функция срабатывает, если функция findDep вернула true.
+     *
+     * @param  {String}     moduleName  Имя модуля, который необходимо загрузить
+     * @param  {Function}   callback    Функция обратного вызова, которую необходимо вызвать после загрузки модуля.
+     */
+    loadModule: function( moduleName, callback ) {
+        // body...
+    }
+});
+````
+
+####Пример с загрузкой модуля####
+
+Допустим, у нас есть внешняя утилита, которая умеет составлять объекты соотвествия имен модулей файлам в которых они находятся. В качестве загрузчка используется [LAB.js](http://labjs.com/).
+
+````javascript
+var modulesDep = {"storage":"core.js", "menu": "ui.js"};
+
+// Настраиваем поиск и загрузку незарегистрированных модулей
+modules.setOptions({
+    findDep: function( moduleName ) {
+        return modulesDep.hasOwnProperty(moduleName);
+    },
+    loadModule: function( moduleName, callback ) {
+        var
+            filename = modulesDep[moduleName];
+        // end of vars
+
+        $LAB.script( getWithVersion(filename) ).wait(callback);
+    }
+});
+
+
+modules.require(
+    ['storage'],
+    function( s ) {
+        // module 'storage' now resolved to 's'
+    });
+````
