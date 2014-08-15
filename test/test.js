@@ -71,6 +71,52 @@ describe('resolving', function() {
     });
 });
 
+describe('load modules', function() {
+    it('should properly load module and resolve dependencies', function(done) {
+        var
+            modulesDep = {'A': './modules/A.js', 'B': './modules/B.js'};
+
+        // Настраиваем поиск и загрузку незарегистрированных модулей
+        modules.setOptions({
+            findDep: function( moduleName ) {
+                return modulesDep.hasOwnProperty(moduleName);
+            },
+            loadModule: function( moduleName, callback ) {
+                var
+                    fs          = require('fs'),
+                    vm          = require('vm'),
+                    filename    = modulesDep[moduleName],
+
+                    // Proxy
+                    originalRequire = require,
+                    processProcess  = process,
+
+                    context = vm.createContext({
+                        process: processProcess,
+                        require: originalRequire,
+                        modules: modules,
+                        console: console,
+                        exports: exports,
+                        module: {
+                            exports: exports
+                        }
+                    }),
+
+                    script = vm.createScript(fs.readFileSync(filename), filename);
+
+                script.runInNewContext(context);
+                callback();
+            }
+        });
+
+        modules.require(['B'], function(B) {
+            var res = B();
+            res.should.have.been.equal(200);
+            done();
+        });
+    });
+});
+
 describe('errors', function() {
     it('should throw error on requiring undefined module', function(done) {
         modules.require(['A'], function() {}, function(e) {
