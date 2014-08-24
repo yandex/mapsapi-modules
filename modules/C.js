@@ -8,16 +8,13 @@
         /**
          * @param       {Function}  provide     Async module export
          */
-        module = function ( provide, A, C ) {
+        module = function ( provide ) {
             var
-                resultA = A(),
-                resultC = C(),
-
                 /**
                  * // moduleRealization description
                  */
                 moduleRealization = function() {
-                    return 100 + resultA + resultC;
+                    return 200;
                 };
             // end of vars
 
@@ -27,13 +24,13 @@
 
 
     /**
-     * @module      B
+     * @module      C
      * @version     0.1
      */
     modules.define(
-        'B',        // Module name
-        ['A', 'C'], // Dependies
-        module      // Module realization
+        'C',    // Module name
+        [],     // Dependies
+        module  // Module realization
     );
 }(
     ( this.hasOwnProperty('modules') ) ? this.modules : modules

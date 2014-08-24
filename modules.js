@@ -146,64 +146,68 @@ var undef,
                 }
 
                 var decls = [],
-                    i = 0, len = unresolvedDepsCnt,
-                    dep, decl;
+                    unloadedDeps = [],
+                    i = 0, j = 0, len = unresolvedDepsCnt,
+                    dep, decl,
 
-                while(i < len) {
-                    dep = deps[i++];
-                    if(typeof dep === 'string') {
-                        if(!modulesStorage[dep] && typeof curOptions.findDep === 'function' && typeof curOptions.loadModule === 'function' && curOptions.findDep(dep)) {
-                            (function(dep, deps, cb) {
-                                curOptions.loadModule(dep, function() {
-                                    pendingRequires.push({
-                                        deps : deps,
-                                        cb   : cb
-                                    });
+                    require = function() {
+                        while(i < len) {
+                            dep = deps[i++];
+                            if(typeof dep === 'string') {
+                                decl = modulesStorage[dep].decl;
+                            }
+                            else {
+                                decl = dep;
+                            }
 
-                                    nextTick(onNextTick);
+                            if(decl.state === DECL_STATES.IN_RESOLVING &&
+                                    curOptions.trackCircularDependencies &&
+                                    isDependenceCircular(decl, path)) {
+                                cb(null, buildCircularDependenceError(decl, path));
+                                return;
+                            }
+
+                            decls.push(decl);
+
+                            startDeclResolving(
+                                decl,
+                                path,
+                                function(_, error) {
+                                    if(error) {
+                                        cb(null, error);
+                                        return;
+                                    }
+
+                                    if(!--unresolvedDepsCnt) {
+                                        var exports = [],
+                                            i = 0, decl;
+                                        while(decl = decls[i++]) {
+                                            exports.push(decl.exports);
+                                        }
+                                        cb(exports);
+                                    }
                                 });
-                            }(dep, deps, cb));
+                        }
+                    };
 
-                            return;
+                while(j < len) {
+                    dep = deps[j++];
+                    if(typeof dep === 'string') {
+                        if(!modulesStorage[dep] && typeof curOptions.findDep === 'function' && typeof curOptions.loadModules === 'function' && curOptions.findDep(dep)) {
+                            unloadedDeps.push(dep);
                         }
                         else if(!modulesStorage[dep]) {
                             cb(null, buildModuleNotFoundError(dep, fromDecl));
                             return;
                         }
-
-                        decl = modulesStorage[dep].decl;
                     }
-                    else {
-                        decl = dep;
-                    }
+                }
 
-                    if(decl.state === DECL_STATES.IN_RESOLVING &&
-                            curOptions.trackCircularDependencies &&
-                            isDependenceCircular(decl, path)) {
-                        cb(null, buildCircularDependenceError(decl, path));
-                        return;
-                    }
-
-                    decls.push(decl);
-
-                    startDeclResolving(
-                        decl,
-                        path,
-                        function(_, error) {
-                            if(error) {
-                                cb(null, error);
-                                return;
-                            }
-
-                            if(!--unresolvedDepsCnt) {
-                                var exports = [],
-                                    i = 0, decl;
-                                while(decl = decls[i++]) {
-                                    exports.push(decl.exports);
-                                }
-                                cb(exports);
-                            }
-                        });
+                if(unloadedDeps.length) {
+                    curOptions.loadModules(unloadedDeps, require);
+                }
+                else {
+                    require();
                 }
             },
 
