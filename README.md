@@ -82,7 +82,7 @@ modules.require(
 
 ####Дополнение к YModules####
 
-В дополнение сделана возможность обработать возможность догрузки модуля по имени, если такого модуля в системе не зарегистированно
+В дополнение сделана возможность обработать возможность догрузки модуля по имени, если такого модуля в системе не зарегистированно. В функцию loadModules будет передан массив имен модулей, которые необходимо загрузить. После того как все модули будут загружены, необходимо вызвать функцию обратного вызова.
 
 ````javascript
 modules.setOptions({
@@ -98,10 +98,10 @@ modules.setOptions({
     /**
      * Функция срабатывает, если функция findDep вернула true.
      *
-     * @param  {String}     moduleName  Имя модуля, который необходимо загрузить
-     * @param  {Function}   callback    Функция обратного вызова, которую необходимо вызвать после загрузки модуля.
+     * @param       {Array}     moduleNames     Массив имен модулей, которые необходимо загрузить
+     * @param       {Function}  callback        Функция обратного вызова
      */
-    loadModule: function( moduleName, callback ) {
+    loadModules: function( moduleName, callback ) {
         // body...
     }
 });
@@ -114,17 +114,37 @@ modules.setOptions({
 ````javascript
 var modulesDep = {"storage":"core.js", "menu": "ui.js"};
 
+// Настройки LAB.js
+$LAB.setGlobalDefaults({
+    AllowDuplicates: false,
+    AlwaysPreserveOrder: true,
+    UseLocalXHR: false,
+    BasePath: '/javascripts/'
+});
+
 // Настраиваем поиск и загрузку незарегистрированных модулей
 modules.setOptions({
     findDep: function( moduleName ) {
         return modulesDep.hasOwnProperty(moduleName);
     },
-    loadModule: function( moduleName, callback ) {
+    loadModules: function( modulesNames, callback ) {
         var
-            filename = modulesDep[moduleName];
+            loadedCnt = 0,
+            filename,
+            i;
         // end of vars
 
-        $LAB.script( getWithVersion(filename) ).wait(callback);
+        for ( i = 0; i < modulesNames.length; i++ ) {
+            filename = modulesDep[modulesNames[i]];
+
+            (function(f) {
+                $LAB.script( getWithVersion(f) ).wait(function() {
+                    loadedCnt++;
+
+                    if (loadedCnt === modulesNames.length) callback();
+                });
+            }(filename));
+        }
     }
 });
 
