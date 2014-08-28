@@ -146,11 +146,27 @@ var undef,
                 }
 
                 var decls = [],
+                    onDeclResolved = function(_, error) {
+                        if(error) {
+                            cb(null, error);
+                            return;
+                        }
+
+                        if(!--unresolvedDepsCnt) {
+                            var exports = [],
+                                i = 0, decl;
+                            while(decl = decls[i++]) {
+                                exports.push(decl.exports);
+                            }
+                            cb(exports);
+                        }
+                    },
                     unloadedDeps = [],
                     i = 0, j = 0, len = unresolvedDepsCnt,
                     dep, decl,
 
                     require = function() {
+
                         while(i < len) {
                             dep = deps[i++];
                             if(typeof dep === 'string') {
@@ -160,33 +176,9 @@ var undef,
                                 decl = dep;
                             }
 
-                            if(decl.state === DECL_STATES.IN_RESOLVING &&
-                                    curOptions.trackCircularDependencies &&
-                                    isDependenceCircular(decl, path)) {
-                                cb(null, buildCircularDependenceError(decl, path));
-                                return;
-                            }
-
                             decls.push(decl);
 
-                            startDeclResolving(
-                                decl,
-                                path,
-                                function(_, error) {
-                                    if(error) {
-                                        cb(null, error);
-                                        return;
-                                    }
-
-                                    if(!--unresolvedDepsCnt) {
-                                        var exports = [],
-                                            i = 0, decl;
-                                        while(decl = decls[i++]) {
-                                            exports.push(decl.exports);
-                                        }
-                                        cb(exports);
-                                    }
-                                });
+                            startDeclResolving(decl, path, onDeclResolved);
                         }
                     };
 
@@ -216,13 +208,14 @@ var undef,
                     cb(decl.exports);
                     return;
                 }
-                else {
-                    decl.dependents.push(cb);
-                }
-
-                if(decl.state === DECL_STATES.IN_RESOLVING) {
+                else if(decl.state === DECL_STATES.IN_RESOLVING) {
+                    curOptions.trackCircularDependencies && isDependenceCircular(decl, path)?
+                        cb(null, buildCircularDependenceError(decl, path)) :
+                        decl.dependents.push(cb);
                     return;
                 }
+
+                decl.dependents.push(cb);
 
                 if(decl.prev && !curOptions.allowMultipleDeclarations) {
                     provideError(decl, buildMultipleDeclarationError(decl));
