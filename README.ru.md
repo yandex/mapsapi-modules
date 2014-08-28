@@ -6,7 +6,6 @@
   1. Асинхронный require модулей
   2. Асинхронный provide модулей
   3. Возможность передекларации/додекларации модуля
-  4. С учетом пункта 3, зависимости должны разрешаться в пределах одного поколения деклараций (поколение образуют декларации модулей в пределах одного тика eventloop)
 
 ####Почему не CommonJS?####
 Смотри пункты 1, 2 и 3 требований
@@ -43,8 +42,8 @@ void modules.require(
 
 ````javascript
 modules.define(
-    'A', 
-    ['B', 'C'], 
+    'A',
+    ['B', 'C'],
     function(provide, b, c, prev) {
         var a = {};
         provide(a);
@@ -64,9 +63,9 @@ modules.define(
         var c = {};
         provide(c);
     });
-    
-modules.define( 
-    'C',    
+
+modules.define(
+    'C',
     function(provide, prevC) {
         var nextC = {};
         provide(nextC);
