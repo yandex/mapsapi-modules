@@ -22,7 +22,7 @@ void modules.define(
     String moduleName,
     [String[] dependencies],
     Function(
-        Function(Object objectToProvide) provide,
+        Function([Object objectToProvide], [Error error]) provide,
         [Object resolvedDependency, ...],
         [Object previousDeclaration]
     ) declarationFunction
@@ -32,9 +32,8 @@ void modules.define(
 ````javascript
 void modules.require(
     String[] dependencies,
-    Function(
-        [Object resolvedDependency, ...]
-    ) callbackFunction
+    Function([Object resolvedDependency, ...]) successCallbackFunction,
+    [Function(Error error) errorCallbackFunction]
 )
 ````
 
