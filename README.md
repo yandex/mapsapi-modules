@@ -41,6 +41,36 @@ void modules.require(
 )
 ````
 
+####Create new modules storage####
+````javascript
+Modules modules.create()
+````
+
+####Modules storage configuration####
+````javascript
+void setOptions(Object options)
+````
+
+#####Available options#####
+  - `trackCircularDependencies` - if set to false doesn't track circular dependencies. true by default
+  - `allowMultipleDeclarations` - if set to false denies module overloading and provides an error. true by default
+
+####Get current state of module in storage####
+````javascript
+String getState(String name)
+````
+
+#####Possible states#####
+  - `NOT_DEFINED` - module wasn't defined
+  - `NOT_RESOLVED` - module was defined, but it hasn't started resolving
+  - `IN_RESOLVING` - resolving is in progress
+  - `RESOLVED` - module is already resolved
+
+####Check for module existence in storage####
+````javascript
+Boolean isDefined(String moduleName)
+````
+
 ####Example####
 
 ````javascript

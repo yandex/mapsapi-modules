@@ -37,6 +37,36 @@ void modules.require(
 )
 ````
 
+####Создание нового хранилища модулей####
+````javascript
+Modules modules.create()
+````
+
+####Настройка хранилища модулей####
+````javascript
+void setOptions(Object options)
+````
+
+#####Доступные опции#####
+  - `trackCircularDependencies` - при `false` не проверяет зацикленные зависимости. По умолчанию `true`
+  - `allowMultipleDeclarations` - при `false` запрещает расширение (переопределение) модулей и генерирует ошибку. По умолчанию `true`
+
+####Получение текущего состояния модуля в хранилище####
+````javascript
+String getState(String name)
+````
+
+#####Возможные состояния#####
+  - `NOT_DEFINED` - не было объявления модуля
+  - `NOT_RESOLVED` - модуль был объявлен, но разрешение зависимостей еще не начато
+  - `IN_RESOLVING` - в процессе разрешения зависимостей модуля
+  - `RESOLVED` - зависимости разрешены
+
+####Проверка наличия объявления модуля в хранилище####
+````javascript
+Boolean isDefined(String moduleName)
+````
+
 ####Пример####
 
 ````javascript
