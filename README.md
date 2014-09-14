@@ -41,11 +41,6 @@ void modules.require(
 )
 ````
 
-####Create new modules storage####
-````javascript
-Modules modules.create()
-````
-
 ####Modules storage configuration####
 ````javascript
 void setOptions(Object options)
@@ -69,6 +64,11 @@ String getState(String name)
 ####Check for module existence in storage####
 ````javascript
 Boolean isDefined(String moduleName)
+````
+
+####Create yet another modules storage####
+````javascript
+Modules modules.create()
 ````
 
 ####Example####
