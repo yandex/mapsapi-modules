@@ -7,7 +7,7 @@ beforeEach(function() {
 });
 
 describe('resolving', function() {
-    it('should properly resolve dependencies (synchronously)', function(done) {
+    it('should properly resolve dependencies (synchronously)', function() {
         modules.define('A', function(provide) {
             provide('A');
         });
@@ -20,10 +20,7 @@ describe('resolving', function() {
             provide('C' + B + A);
         });
 
-        modules.require(['C'], function(C) {
-            C.should.have.been.equal('CABA');
-            done();
-        });
+        modules.requireSync('C').should.have.been.equal('CABA');
     });
 
     it('should properly resolve dependencies (asynchronously)', function(done) {
@@ -79,6 +76,14 @@ describe('errors', function() {
         });
     });
 
+    it('should throw error on sync requiring undefined module', function() {
+        try {
+            modules.requireSync('A')
+        } catch(e) {
+            e.message.should.have.been.equal('Required module "A" can\'t be resolved');
+        }
+    });
+
     it('should throw error on depending from undefined module', function(done) {
         modules.define('A', ['B'], function(provide) {
             provide('A');
@@ -104,6 +109,20 @@ describe('errors', function() {
             e.message.should.have.been.equal('Declaration of module "A" has already been provided');
             done();
         });
+    });
+
+    it('should throw error if declaration hasn\'t been provided yet', function() {
+        modules.define('A', function(provide) {
+            setTimeout(function() {
+                provide('A');
+            }, 10);
+        });
+
+        try {
+            modules.requireSync('A')
+        } catch(e) {
+            e.message.should.have.been.equal('Declaration of module "A" hasn\'t been provided yet');
+        }
     });
 
     it('should throw error on circular dependence', function(done) {
