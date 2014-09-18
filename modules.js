@@ -91,6 +91,28 @@ var undef,
             },
 
             /**
+             * Synchronously requires module
+             * @param {String} name
+             * @returns {Object} resolved module
+             */
+            requireSync = function(name) {
+                var module = undef;
+                requireDeps(null, [name], [], function (exports, error) {
+                    if(!error) {
+                        module = exports.pop();
+                    }
+                    else {
+                        throw error;
+                    }
+                });
+
+                if(getState(name) === DECL_STATES.IN_RESOLVING) {
+                    throw buildDeclNotYetProvidedError(modulesStorage[name].decl);
+                }
+                return module;
+            },
+
+            /**
              * Returns state of module
              * @param {String} name
              * @returns {String} state, possible values are NOT_DEFINED, NOT_RESOLVED, IN_RESOLVING, RESOLVED
@@ -265,12 +287,13 @@ var undef,
             };
 
         return {
-            create     : create,
-            define     : define,
-            require    : require,
-            getState   : getState,
-            isDefined  : isDefined,
-            setOptions : setOptions
+            create      : create,
+            define      : define,
+            require     : require,
+            requireSync : requireSync,
+            getState    : getState,
+            isDefined   : isDefined,
+            setOptions  : setOptions
         };
     },
 
@@ -299,6 +322,10 @@ var undef,
 
     buildDeclAreadyProvidedError = function(decl) {
         return Error('Declaration of module "' + decl.name + '" has already been provided');
+    },
+
+    buildDeclNotYetProvidedError = function(decl) {
+        return Error('Declaration of module "' + decl.name + '" hasn\'t been provided yet');
     },
 
     buildMultipleDeclarationError = function(decl) {
