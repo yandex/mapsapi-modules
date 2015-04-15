@@ -123,6 +123,20 @@ var undef,
                 }
             },
 
+            getStat = function() {
+                var res = {},
+                    module;
+
+                for(var name in modulesStorage) {
+                    if(modulesStorage.hasOwnProperty(name)) {
+                        module = modulesStorage[name];
+                        (res[module.decl.state] || (res[module.decl.state] = [])).push(name);
+                    }
+                }
+
+                return res;
+            },
+
             onNextTick = function() {
                 waitForNextTick = false;
                 applyRequires();
@@ -270,7 +284,8 @@ var undef,
             require    : require,
             getState   : getState,
             isDefined  : isDefined,
-            setOptions : setOptions
+            setOptions : setOptions,
+            getStat    : getStat
         };
     },
 
