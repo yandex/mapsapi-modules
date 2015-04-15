@@ -1,6 +1,6 @@
 {
     "name" : "ym",
-    "version" : "0.1.0",
+    "version" : "0.1.1",
     "description" : "Async modular system",
     "homepage" : "https://github.com/ymaps/modules",
     "keywords" : ["javascript", "module", "async", "dependency", "injection"],
