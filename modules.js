@@ -415,4 +415,4 @@ else {
     global.modules = create();
 }
 
-})(this);
+})(typeof window !== 'undefined' ? window : global);
