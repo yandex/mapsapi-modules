@@ -23,5 +23,13 @@
     },
     "scripts" : {
         "test" : "make lint && make test"
-    }
+    },
+    "license": "(MIT OR GPL-2.0+)",
+    "ignore": [
+        "**/.*",
+        "Makefile",
+        "bower.json",
+        "node_modules",
+        "test"
+    ]
 }

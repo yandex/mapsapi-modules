@@ -1,0 +1,23 @@
+{
+  "name": "ym",
+  "main": "modules.js",
+  "description" : "Async modular system",
+  "homepage" : "https://github.com/ymaps/modules",
+  "keywords" : ["javascript", "module", "async", "dependency", "injection"],
+  "authors": [{
+    "name"  : "Dmitry Filatov",
+    "email" : "dfilatov@yandex-team.ru"
+  }],
+  "moduleType": [
+    "globals",
+    "node"
+  ],
+  "license": "(MIT OR GPL-2.0+)",
+  "ignore": [
+    "**/.*",
+    "Makefile",
+    "package.json",
+    "node_modules",
+    "test"
+  ]
+}
