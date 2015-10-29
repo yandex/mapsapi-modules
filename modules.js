@@ -245,13 +245,15 @@ var undef,
                                 provideDecl(decl, exports);
                         });
 
-                        decl.fn.apply(
-                            {
-                                name   : decl.name,
-                                deps   : decl.deps,
-                                global : global
-                            },
-                            depDeclsExports);
+                        nextTick(function() {
+                            decl.fn.apply(
+                                {
+                                    name   : decl.name,
+                                    deps   : decl.deps,
+                                    global : global
+                                },
+                                depDeclsExports);
+                        });
                     });
             },
 
