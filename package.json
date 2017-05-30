@@ -18,16 +18,20 @@
     "devDependencies": {
         "jshint" : "2.3.0",
         "jscs" : "1.0.0",
-        "mocha": "1.18.2",
-        "chai" : "1.9.1"
+        "nyc" : "^11.0.2",
+        "mocha" : "^3.4.2",
+        "chai" : "^4.0.2"
     },
     "scripts" : {
-        "test" : "make lint && make test"
+        "clover" : "nyc --reporter=clover npm run bdd",
+        "coverage" : "nyc --reporter=text --reporter=html npm run bdd; echo; echo 'Open coverage/index.html file in your browser'",
+        "lint" : "jshint modules.js && jscs modules.js",
+        "bdd" : "mocha -u bdd -R spec --recursive",
+        "test" : "npm run lint && npm run bdd"
     },
     "license": "(MIT OR GPL-2.0+)",
     "ignore": [
         "**/.*",
-        "Makefile",
         "bower.json",
         "node_modules",
         "test"
