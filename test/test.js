@@ -7,6 +7,17 @@ beforeEach(function() {
 });
 
 describe('resolving', function() {
+    it('should properly resolve dependencies by string', function(done) {
+        modules.define('A', function(provide) {
+            provide('A');
+        });
+
+        modules.require('A', function(A) {
+            A.should.have.been.equal('A');
+            done();
+        });
+    });
+
     it('should properly resolve dependencies (synchronously)', function(done) {
         modules.define('A', function(provide) {
             provide('A');
@@ -73,6 +84,7 @@ describe('resolving', function() {
 
 describe('errors', function() {
     it('should throw error on requiring undefined module', function(done) {
+        modules.isDefined('A').should.have.been.equal(false);
         modules.require(['A'], function() {}, function(e) {
             e.message.should.have.been.equal('Required module "A" can\'t be resolved');
             done();
@@ -188,6 +200,10 @@ describe('errors', function() {
             modules.getState('C').should.be.equal('NOT_RESOLVED');
             modules.getState('B').should.be.equal('NOT_RESOLVED');
             modules.getState('A').should.be.equal('NOT_RESOLVED');
+            modules.getState('X').should.be.equal('NOT_DEFINED');
+            modules.getStat().should.to.deep.equal({
+                NOT_RESOLVED: [ 'A', 'B', 'C' ]
+            });
             done();
         });
     });
