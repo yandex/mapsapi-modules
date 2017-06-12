@@ -82,6 +82,62 @@ describe('resolving', function() {
     });
 });
 
+describe('load modules', function() {
+    it('should properly load module and resolve dependencies', function(done) {
+        var
+            modulesDep = {'A': './modules/A.js', 'B': './modules/B.js', 'C': './modules/C.js'};
+
+        // Настраиваем поиск и загрузку незарегистрированных модулей
+        modules.setOptions({
+            findDep: function( moduleName ) {
+                return modulesDep.hasOwnProperty(moduleName);
+            },
+            loadModules: function( modulesNames, callback ) {
+                var
+                    fs = require('fs'),
+                    vm = require('vm'),
+                    loadedCnt = 0,
+
+                    // Proxy
+                    originalRequire = require,
+                    processProcess  = process,
+
+                    filename, file, context, script, i;
+
+                for(i = 0; i < modulesNames.length; i++) {
+                    filename = modulesDep[modulesNames[i]];
+                    (function(filename){
+                        file = fs.readFile(filename, 'utf8', function(err, data) {
+                            context = vm.createContext({
+                                process: processProcess,
+                                require: originalRequire,
+                                modules: modules,
+                                console: console,
+                                exports: exports,
+                                module: {
+                                    exports: exports
+                                }
+                            });
+                            script = vm.createScript(data, filename);
+                            script.runInNewContext(context);
+
+                            loadedCnt++;
+
+                            if (loadedCnt === modulesNames.length) callback();
+                        });
+                    }(filename))
+                };
+            }
+        });
+
+        modules.require(['B'], function(B) {
+            var res = B();
+            res.should.have.been.equal(400);
+            done();
+        });
+    });
+});
+
 describe('errors', function() {
     it('should throw error on requiring undefined module', function(done) {
         modules.isDefined('A').should.have.been.equal(false);

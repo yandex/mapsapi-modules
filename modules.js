@@ -175,26 +175,45 @@ var undef,
                             cb(exports);
                         }
                     },
-                    i = 0, len = unresolvedDepsCnt,
-                    dep, decl;
+                    unloadedDeps = [],
+                    i = 0, j = 0, len = unresolvedDepsCnt,
+                    dep, decl,
 
-                while(i < len) {
-                    dep = deps[i++];
+                    require = function() {
+
+                        while(i < len) {
+                            dep = deps[i++];
+                            if(typeof dep === 'string') {
+                                decl = modulesStorage[dep].decl;
+                            }
+                            else {
+                                decl = dep;
+                            }
+
+                            decls.push(decl);
+
+                            startDeclResolving(decl, path, onDeclResolved);
+                        }
+                    };
+
+                while(j < len) {
+                    dep = deps[j++];
                     if(typeof dep === 'string') {
-                        if(!modulesStorage[dep]) {
+                        if(!modulesStorage[dep] && typeof curOptions.findDep === 'function' && typeof curOptions.loadModules === 'function' && curOptions.findDep(dep)) {
+                            unloadedDeps.push(dep);
+                        }
+                        else if(!modulesStorage[dep]) {
                             cb(null, buildModuleNotFoundError(dep, fromDecl));
                             return;
                         }
-
-                        decl = modulesStorage[dep].decl;
                     }
-                    else {
-                        decl = dep;
-                    }
+                }
 
-                    decls.push(decl);
-
-                    startDeclResolving(decl, path, onDeclResolved);
+                if(unloadedDeps.length) {
+                    curOptions.loadModules(unloadedDeps, require);
+                }
+                else {
+                    require();
                 }
             },
 

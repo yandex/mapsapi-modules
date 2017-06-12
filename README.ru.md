@@ -106,3 +106,79 @@ modules.require(
     // module 'A' now resolved to a
   });
 ````
+
+####Дополнение к YModules####
+
+В дополнение сделана возможность обработать возможность догрузки модуля по имени, если такого модуля в системе не зарегистированно. В функцию loadModules будет передан массив имен модулей, которые необходимо загрузить. После того как все модули будут загружены, необходимо вызвать функцию обратного вызова.
+
+````javascript
+modules.setOptions({
+    /**
+     * Функция поиска модуля
+     *
+     * @param  {String}     moduleName  Имя модуля, который не зарегистирован в системе
+     * @return {Boolean}                Можно ли этот модуль загрузить
+     */
+    findDep: function( moduleName ) {
+        // body...
+    },
+    /**
+     * Функция срабатывает, если функция findDep вернула true.
+     *
+     * @param       {Array}     moduleNames     Массив имен модулей, которые необходимо загрузить
+     * @param       {Function}  callback        Функция обратного вызова
+     */
+    loadModules: function( moduleName, callback ) {
+        // body...
+    }
+});
+````
+
+####Пример с загрузкой модуля####
+
+Допустим, у нас есть внешняя утилита, которая умеет составлять объекты соотвествия имен модулей файлам в которых они находятся. В качестве загрузчка используется [LAB.js](http://labjs.com/).
+
+````javascript
+var modulesDep = {"storage":"core.js", "menu": "ui.js"};
+
+// Настройки LAB.js
+$LAB.setGlobalDefaults({
+    AllowDuplicates: false,
+    AlwaysPreserveOrder: true,
+    UseLocalXHR: false,
+    BasePath: '/javascripts/'
+});
+
+// Настраиваем поиск и загрузку незарегистрированных модулей
+modules.setOptions({
+    findDep: function( moduleName ) {
+        return modulesDep.hasOwnProperty(moduleName);
+    },
+    loadModules: function( modulesNames, callback ) {
+        var
+            loadedCnt = 0,
+            filename,
+            i;
+        // end of vars
+
+        for ( i = 0; i < modulesNames.length; i++ ) {
+            filename = modulesDep[modulesNames[i]];
+
+            (function(f) {
+                $LAB.script( getWithVersion(f) ).wait(function() {
+                    loadedCnt++;
+
+                    if (loadedCnt === modulesNames.length) callback();
+                });
+            }(filename));
+        }
+    }
+});
+
+
+modules.require(
+    ['storage'],
+    function( s ) {
+        // module 'storage' now resolved to 's'
+    });
+````
